@@ -1,5 +1,8 @@
 name: Docker Hub Push
 
+on:
+  push:
+    branches: ["main"]
 
 jobs:
   push_to_registry:
