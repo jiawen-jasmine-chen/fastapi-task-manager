@@ -19,7 +19,7 @@ spec:
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
+          valueFrom: 
             secretKeyRef:
               name: mysql-secret
               key: mysql-root-password
@@ -32,3 +32,4 @@ spec:
       - name: mysql-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
+
