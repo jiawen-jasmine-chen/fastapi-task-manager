@@ -19,6 +19,7 @@ jobs:
       - name: Get commit info
         id: commit
         run: |
+          git fetch --unshallow || true
           MESSAGE="$(git log -1 --pretty-format:'%s')"
           AUTHOR="$(git log -1 --pretty-format:'%an')"
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
@@ -26,7 +27,7 @@ jobs:
  
       - name: debug commit info
         run: |
-          echo "Commit Message: ${{ env.MESSAGE }}
+          echo "Commit Message: ${{ env.MESSAGE }}"
           echo "Commit Author: ${{ env.AUTHOR }}"
 
       - name: Log in to Docker Hub
