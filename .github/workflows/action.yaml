@@ -26,9 +26,6 @@ jobs:
           AUTHOR=$(git show -s --format='%an')
           echo "MESSAGE=$MESSAGE" >> "$GITHUB_OUTPUT"
           echo "AUTHOR=$AUTHOR" >> "$GITHUB_OUTPUT"
-        shell: bash
-        env:
-          GITHUB_OUTPUT: $GITHUB_OUTPUT
  
       - name: debug commit info
         run: |
