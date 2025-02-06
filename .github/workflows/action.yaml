@@ -14,6 +14,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "MESSAGE=$(git log -1 --pretty-format:'%s')" >> $GITHUB_ENV
+          echo "AUTHOR=$(git log -1 --pretty-format:'%an')" >> $GITHUB_ENV
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -49,4 +55,26 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             sudo kubectl rollout restart deployment backend
+
+      - name: discord notification on success
+        if: success()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+          🎉🚀 **Deployment Successful!** 🚀🎉
+          **Commit:** `${{ env.MESSAGE }}`
+          **By:** `${{ env.AUTHOR }}`
+
+      - name: discord notification on failure
+        if: failure()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+          😭💩 **Deployment Failed, check the logs...** 💩😭
+          **Commit:** `${{ env.MESSAGE }}`
+          **By:** `${{ env.AUTHOR }}`
 
