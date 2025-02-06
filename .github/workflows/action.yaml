@@ -76,24 +76,20 @@ jobs:
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          MESSAGE: ${{ env.MESSAGE }}
-          AUTHOR: ${{ env.AUTHOR }}
         with:
           args: |
             🎉🚀 **Deployment Successful!** 🚀🎉
-            **Commit:** `${{ env.MESSAGE }}`
-            **By:** `${{ env.AUTHOR }}`
+            **Commit:** `$(echo $MESSAGE)`
+            **By:** `$(echo $AUTHOR)`
 
       - name: discord notification on failure
         if: failure()
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          MESSAGE: ${{ env.MESSAGE }}
-          AUTHOR: ${{ env.AUTHOR }}
         with:
           args: |
             😭💩 **Deployment Failed, check the logs...** 💩😭
-            **Commit:** `${{ env.MESSAGE }}`
-            **By:** `${{ env.AUTHOR }}`
+            **Commit:** `$(echo $MESSAGE)`
+            **By:** `$(echo $AUTHOR)`
 
