@@ -19,7 +19,7 @@ def get_users():
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from users;")
+            cursor.execute("SELECT * from User;")
             users = cursor.fetchall()
         connection.close()
         return {"users":users}
