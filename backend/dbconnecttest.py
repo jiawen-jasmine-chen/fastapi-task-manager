@@ -106,8 +106,6 @@ def getTasksTest():
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
     
-###jlskfsg
-
 @app.post("/taskstest")
 def createTaskTest(description,completed):
     try:
