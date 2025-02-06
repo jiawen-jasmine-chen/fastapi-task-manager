@@ -1,0 +1,45 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo-specific files and builds
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# React Native (Metro bundler)
+.metro-health-check*
+
+# Native build files and sensitive keys
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS-specific files
+.DS_Store
+*.pem
+
+# Local environment config files
+.env*.local
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Example app directory
+app-example
+
+# Miscellaneous
+.idea/                 # JetBrains IDE files (e.g., WebStorm)
+.vscode/               # VSCode settings (optional, depends on the project)
+coverage/              # Test coverage reports
+logs/                  # Log files
