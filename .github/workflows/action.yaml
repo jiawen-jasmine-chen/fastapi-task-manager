@@ -63,9 +63,9 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-          🎉🚀 **Deployment Successful!** 🚀🎉
-          **Commit:** `${{ env.MESSAGE }}`
-          **By:** `${{ env.AUTHOR }}`
+            🎉🚀 **Deployment Successful!** 🚀🎉
+            **Commit:** `${{ env.MESSAGE }}`
+            **By:** `${{ env.AUTHOR }}`
 
       - name: discord notification on failure
         if: failure()
@@ -74,7 +74,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-          😭💩 **Deployment Failed, check the logs...** 💩😭
-          **Commit:** `${{ env.MESSAGE }}`
-          **By:** `${{ env.AUTHOR }}`
+            😭💩 **Deployment Failed, check the logs...** 💩😭
+            **Commit:** `${{ env.MESSAGE }}`
+            **By:** `${{ env.AUTHOR }}`
 
