@@ -73,23 +73,23 @@ jobs:
 
       - name: discord notification on success
         if: success()
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: appleboy/discord-action@v1.0.0
         with:
-          args: |
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: |
             🎉🚀 **Deployment Successful!** 🚀🎉
-            **Commit:** `$(echo $MESSAGE)`
-            **By:** `$(echo $AUTHOR)`
+            **Commit:** `${{ env.MESSAGE }}`
+            **By:** `${{ env.AUTHOR }}`
 
       - name: discord notification on failure
         if: failure()
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: appleboy/discord-action@v1.0.0
         with:
-          args: |
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: |
             😭💩 **Deployment Failed, check the logs...** 💩😭
-            **Commit:** `$(echo $MESSAGE)`
-            **By:** `$(echo $AUTHOR)`
+            **Commit:** `${{ env.MESSAGE }}`
+            **By:** `${{ env.AUTHOR }}`
 
