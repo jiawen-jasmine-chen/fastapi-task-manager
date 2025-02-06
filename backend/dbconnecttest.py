@@ -69,7 +69,7 @@ def get_tasks(todolist_id):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from TASK WHERE ToDoListID = %s;",(todolist_id,))
+            cursor.execute("SELECT * from Task WHERE ToDoListID = %s;",(todolist_id,))
             tasks = cursor.fetchall
         connection.close()
         return {"tasks":tasks}
