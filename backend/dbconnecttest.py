@@ -26,6 +26,9 @@ def get_users():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+
 @app.post("/users")
 def create_user(username):
     try:
@@ -90,5 +93,18 @@ def create_task(description, assignee, due_date, todolist_id,owner_id):
         return {"message":"Task created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
+    
+@app.get("/taskstest")
+def getTasksTest():
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * from taskTest")
+            tasks = cursor.fetchall()
+        connection.close()
+        return {"tasks":tasks}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
+    
     
 #aa
