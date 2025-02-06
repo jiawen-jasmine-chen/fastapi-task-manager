@@ -82,7 +82,7 @@ def create_task(description, assignee, due_date, todolist_id,owner_id):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
-                INSERT INTO tasks (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
+                INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
                 VALUES (%s, 'Not Started', %s, %s, %s, %s);
             """, (description, assignee, due_date, todolist_id, owner_id))
             connection.commit()
