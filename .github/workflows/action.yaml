@@ -16,6 +16,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Debug Git Setup
+        run: |
+          git --version
+          git status
+          git log -1 --oneline || echo "No commits found"
+
       - name: Get commit info
         id: commit
         run: |
