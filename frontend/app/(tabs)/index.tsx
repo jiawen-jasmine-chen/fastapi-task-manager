@@ -24,7 +24,7 @@ export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   
   useEffect(() => {
-    fetch('host = http://backend.155.4.244.194.nip.io') // 这里替换成你的后端 API 地址
+    fetch('http://backend.155.4.244.194.nip.io/taskstest') // 这里替换成你的后端 API 地址
       .then(response => response.json()) 
       .then(data => setTasks(data)) 
       .catch(error => console.error('Error fetching tasks:', error));

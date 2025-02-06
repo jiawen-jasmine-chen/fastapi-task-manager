@@ -22,6 +22,11 @@ jobs:
           echo "MESSAGE=$(git log -1 --pretty-format:'%s')" >> $GITHUB_ENV
           echo "AUTHOR=$(git log -1 --pretty-format:'%an')" >> $GITHUB_ENV
 
+      - name: debug commit info
+        run: |
+          echo "Commit Message: $MESSAGE"
+          echo "Commit Author: $AUTHOR"
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
