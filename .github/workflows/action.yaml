@@ -19,8 +19,8 @@ jobs:
       - name: Get commit info
         id: commit
         run: |
-          MESSAGE = "$(git log -1 --pretty-format:'%s')"
-          AUTHOR = "$(git log -1 --pretty-format:'%an')"
+          MESSAGE="$(git log -1 --pretty-format:'%s')"
+          AUTHOR="$(git log -1 --pretty-format:'%an')"
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
  
@@ -81,11 +81,9 @@ jobs:
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          COMMIT_MESSAGE: ${{ env.MESSAGE }}
-          COMMIT_AUTHOR: ${{ env.AUTHOR }}
         with:
           args: |
             😭💩 **Deployment Failed, check the logs...** 💩😭
-            **Commit:** `${{ env.COMMIT_MESSAGE }}`
-            **By:** `${{ env.COMMIT_AUTHOR }}`
+            **Commit:** `${{ env.MESSAGE }}`
+            **By:** `${{ env.AUTHOR }}`
 
