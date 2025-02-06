@@ -1,0 +1,17 @@
+name: "Test Bot DM"
+
+on:
+  workflow_dispatch:  # Allows manual testing
+
+jobs:
+  send_test_dm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Test DM to Myself
+        run: |
+          curl -X POST "https://discord.com/api/v9/users/481728821465448448/messages" \
+          -H "Authorization: Bot ${{ secrets.BOT_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "content": "📩 **Hello!** This is a test message from your bot!"
+          }'
