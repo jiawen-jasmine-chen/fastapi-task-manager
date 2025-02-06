@@ -71,25 +71,27 @@ jobs:
           script: |
             sudo kubectl rollout restart deployment backend
 
-      - name: discord notification on success
+      - name: Discord notification on success
         if: success()
-        uses: appleboy/discord-action@v1.0.0
-        with:
-          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
-          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          message: |
-            🎉🚀 **Deployment Successful!** 🚀🎉
-            **Commit:** `${{ env.MESSAGE }}`
-            **By:** `${{ env.AUTHOR }}`
+        run: |
+          COMMIT_MESSAGE=$(git show -s --format="%s")
+          COMMIT_AUTHOR=$(git show -s --format="%an")
 
-      - name: discord notification on failure
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\": \"🎉🚀 **Deployment Successful!** 🚀🎉\n**Commit:** \`$COMMIT_MESSAGE\`\n**By:** \`$COMMIT_AUTHOR\`\"}" \
+            https://discord.com/api/webhooks/${{ secrets.DISCORD_WEBHOOK_ID }}/${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+      - name: Discord notification on failure
         if: failure()
-        uses: appleboy/discord-action@v1.0.0
-        with:
-          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
-          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          message: |
-            😭💩 **Deployment Failed, check the logs...** 💩😭
-            **Commit:** `${{ env.MESSAGE }}`
-            **By:** `${{ env.AUTHOR }}`
+        run: |
+          COMMIT_MESSAGE=$(git show -s --format="%s")
+          COMMIT_AUTHOR=$(git show -s --format="%an")
 
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\": \"😭💩 **Deployment Failed, check the logs...** 💩😭\n**Commit:** \`$COMMIT_MESSAGE\`\n**By:** \`$COMMIT_AUTHOR\`\"}" \
+            https://discord.com/api/webhooks/${{ secrets.DISCORD_WEBHOOK_ID }}/${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+
+      
+      
