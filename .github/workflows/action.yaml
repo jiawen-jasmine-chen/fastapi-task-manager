@@ -49,5 +49,5 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             echo "Restarting deployment"
-            sudo kubectl rollout restart development backend
+            sudo kubectl rollout restart deployment backend
             echo "Deployment successfully restarted!"
