@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import {
   View,
   Text,
@@ -20,12 +21,35 @@ interface Task {
 }
 
 export default function HomeScreen() {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: '1', text: 'Drink 8 glasses of water', completed: false },
-    { id: '2', text: 'Edit the PDF', completed: false },
-    { id: '3', text: 'Write in a gratitude journal', completed: false },
-    { id: '4', text: 'Stretch everyday for 15 mins', completed: false },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  
+  useEffect(() => {
+    fetch('host = http://backend.155.4.244.194.nip.io') // 这里替换成你的后端 API 地址
+      .then(response => response.json()) 
+      .then(data => setTasks(data)) 
+      .catch(error => console.error('Error fetching tasks:', error));
+  }, []); // 空依赖数组，确保仅在组件挂载时请求数据
+
+  return (
+    <View>
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Text style={{ padding: 10 }}>{item.text}</Text>
+        )}
+      />
+    </View>
+  );
+
+
+// export default function HomeScreen() {
+//   const [tasks, setTasks] = useState<Task[]>([
+//     { id: '1', text: 'Drink 8 glasses of water', completed: false },
+//     { id: '2', text: 'Edit the PDF', completed: false },
+//     { id: '3', text: 'Write in a gratitude journal', completed: false },
+//     { id: '4', text: 'Stretch everyday for 15 mins', completed: false },
+//   ]);
 
   const [newTask, setNewTask] = useState('');
   const [bottomOffset] = useState(new Animated.Value(70));
@@ -151,6 +175,7 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
