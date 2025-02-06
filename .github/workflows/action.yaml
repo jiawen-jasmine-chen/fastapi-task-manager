@@ -25,7 +25,7 @@ jobs:
           MESSAGE=$(git show -s --format='%s')
           AUTHOR=$(git show -s --format='%an')
 
-          if [ "$AUTHOR" = "benjaminstrandberg" ]; then
+          if [ "$AUTHOR" = "TommyKomo99" ]; then
             AUTHOR="Hussein"
           fi
 
