@@ -25,7 +25,7 @@ jobs:
       - name: Get commit info
         id: commit
         run: |
-          MESSAGE=$(git log -1 --format:"%s")
+          MESSAGE=$(git log -1 --oneline | cut -d ' ' -f2-)
           AUTHOR=$(git log -1 --format:"%an")
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
