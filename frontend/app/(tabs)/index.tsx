@@ -1,75 +1,264 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Keyboard,
+  Animated,
+  SafeAreaView,
+  TouchableWithoutFeedback,
+} from 'react-native';
+import { Checkbox } from 'expo-checkbox';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: '1', text: 'Drink 8 glasses of water', completed: false },
+    { id: '2', text: 'Edit the PDF', completed: false },
+    { id: '3', text: 'Write in a gratitude journal', completed: false },
+    { id: '4', text: 'Stretch everyday for 15 mins', completed: false },
+  ]);
+
+  const [newTask, setNewTask] = useState('');
+  const [bottomOffset] = useState(new Animated.Value(70));
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
+      Animated.timing(bottomOffset, {
+        toValue: e.endCoordinates.height - 20,
+        duration: 30,
+        useNativeDriver: false,
+      }).start();
+    });
+
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      Animated.timing(bottomOffset, {
+        toValue: 70,
+        duration: 150,
+        useNativeDriver: false,
+      }).start();
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const toggleTaskCompletion = (id: string) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const addTask = () => {
+    if (newTask.trim().length === 0) {
+      alert('Task cannot be empty!');
+      return;
+    }
+    if (newTask.length > 50) {
+      alert('Task text is too long. Keep it under 50 characters.');
+      return;
+    }
+
+    if (newTask.trim()) {
+      const updatedTasks = [...tasks, { id: `${tasks.length + 1}`, text: newTask, completed: false }];
+      setTasks(updatedTasks);
+      setNewTask('');
+
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  };
+
+  const renderTask = ({ item }: { item: Task }) => (
+    <View>
+      <View style={styles.taskRow}>
+        <Checkbox
+          value={item.completed}
+          onValueChange={() => toggleTaskCompletion(item.id)}
+          style={styles.checkbox}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <ThemedText type="title">This is a test</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <Text style={[styles.taskText, item.completed && styles.completedTask]}>{item.text}</Text>
+      </View>
+      <View style={styles.separator} />
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.innerContainer}>
+          {/* 标题部分 */}
+          <View style={styles.header}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.headerText}>Today</Text>
+              <Text style={styles.headerSubText}>26 Dec</Text>
+            </View>
+          </View>
+
+          {/* 空状态或者列表部分 */}
+          {tasks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No tasks yet. 🎉</Text>
+              <Text style={styles.emptySubText}>Enjoy your day or add a new task below!</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={tasks}
+              renderItem={renderTask}
+              keyExtractor={(item) => item.id}
+              initialNumToRender={10}
+              removeClippedSubviews={true}
+              contentContainerStyle={styles.taskList}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+
+          {/* 包裹输入框和背景条的容器 */}
+          <Animated.View style={[styles.inputWrapper, { bottom: bottomOffset }]}>
+            <View style={styles.whiteBackgroundBar} />
+
+            {/* 输入框和加号按钮 */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Write a task..."
+                value={newTask}
+                onChangeText={setNewTask}
+                onSubmitEditing={addTask}
+              />
+              <TouchableOpacity style={styles.addButton} onPress={addTask}>
+                <Text style={styles.addButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  innerContainer: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 20,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+  },
   titleContainer: {
     flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'flex-start',
+    gap: 8,
+  },
+  headerText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  headerSubText: {
+    fontSize: 20,
+    color: '#808080',
+  },
+  taskList: {
+    paddingHorizontal: 20,
+    paddingBottom: 150,
+  },
+  taskRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  checkbox: {
+    marginRight: 10,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  taskText: {
+    fontSize: 18,
+  },
+  completedTask: {
+    textDecorationLine: 'line-through',
+    color: '#999',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#dcdcdc',
+    marginVertical: 5,
+  },
+  inputWrapper: {
     position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    backgroundColor: '#ffffff',
+  },
+  whiteBackgroundBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 500,
+    backgroundColor: '#ffffff',
+    zIndex: 0,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 10,
+    marginHorizontal: 10,
+    marginBottom: -5,
+  },
+  input: {
+    flex: 1,
+    fontSize: 18,
+  },
+  addButton: {
+    backgroundColor: '#6c63ff',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonText: {
+    fontSize: 24,
+    color: '#ffffff',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyStateText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  emptySubText: {
+    fontSize: 16,
+    color: '#808080',
+    textAlign: 'center',
   },
 });
