@@ -10,25 +10,25 @@ jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    outputs:
+      MESSAGE: ${{ steps.commit.outputs.MESSAGE }}
+      AUTHOR: ${{ steps.commit.outputs.AUTHOR }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Debug Git Setup
-        run: |
-          git --version
-          git status
-          git log -1 --oneline || echo "No commits found"
-
       - name: Get commit info
         id: commit
         run: |
-          MESSAGE=$(git show -s --format="%s")
-          AUTHOR=$(git show -s --format="%an")
-          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
-          echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
+          MESSAGE=$(git show -s --format='%s')
+          AUTHOR=$(git show -s --format='%an')
+          echo "MESSAGE=$MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "AUTHOR=$AUTHOR" >> "$GITHUB_OUTPUT"
+        shell: bash
+        env:
+          GITHUB_OUTPUT: $GITHUB_OUTPUT
  
       - name: debug commit info
         run: |
@@ -61,6 +61,9 @@ jobs:
     name: Deploy to VM
     needs: push_to_registry
     runs-on: ubuntu-latest
+    env:
+      MESSAGE: ${{ needs.push_to_registry.outputs.MESSAGE }}
+      AUTHOR: ${{ needs.push_to_registry.outputs.AUTHOR }}
     steps:
       - name: SSH into VM and restart backend deployment
         uses: appleboy/ssh-action@v0.1.10
@@ -74,23 +77,17 @@ jobs:
       - name: Discord notification on success
         if: success()
         run: |
-          COMMIT_MESSAGE=$(git show -s --format="%s")
-          COMMIT_AUTHOR=$(git show -s --format="%an")
-
           curl -H "Content-Type: application/json" \
             -X POST \
-            -d "{\"content\": \"🎉🚀 **Deployment Successful!** 🚀🎉\n**Commit:** \`$COMMIT_MESSAGE\`\n**By:** \`$COMMIT_AUTHOR\`\"}" \
+            -d "{\"content\": \"🎉🚀 **Deployment Successful!** 🚀🎉\n**Commit:** \`$MESSAGE\`\n**By:** \`$AUTHOR\`\"}" \
             https://discord.com/api/webhooks/${{ secrets.DISCORD_WEBHOOK_ID }}/${{ secrets.DISCORD_WEBHOOK_TOKEN }}
 
       - name: Discord notification on failure
         if: failure()
         run: |
-          COMMIT_MESSAGE=$(git show -s --format="%s")
-          COMMIT_AUTHOR=$(git show -s --format="%an")
-
           curl -H "Content-Type: application/json" \
             -X POST \
-            -d "{\"content\": \"😭💩 **Deployment Failed, check the logs...** 💩😭\n**Commit:** \`$COMMIT_MESSAGE\`\n**By:** \`$COMMIT_AUTHOR\`\"}" \
+            -d "{\"content\": \"😭💩 **Deployment Failed, check the logs...** 💩😭\n**Commit:** \`$MESSAGE\`\n**By:** \`$AUTHOR\`\"}" \
             https://discord.com/api/webhooks/${{ secrets.DISCORD_WEBHOOK_ID }}/${{ secrets.DISCORD_WEBHOOK_TOKEN }}
 
       
