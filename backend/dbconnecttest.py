@@ -106,5 +106,28 @@ def getTasksTest():
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
     
-    
-#aa
+
+@app.post("/taskstest")
+def createTaskTest(description,completed):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("INSERT into taskTest (Description,Completed) VALUES(%s,%s);",(description,completed))
+            connection.commit()
+        connection.close()
+        return {"message": "Task created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
+
+@app.put("/taskstest/{task_id}")
+def markAsCompleted(task_id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE taskTest SET Completed = 1 WHERE ID = %s;",(task_id,))
+            connection.commit()
+        
+        connection.close()
+        return {"message": f"Task {task_id} marked as completed"}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
