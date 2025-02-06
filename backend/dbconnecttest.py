@@ -70,7 +70,7 @@ def get_tasks(todolist_id):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT * from Task WHERE ToDoListID = %s;",(todolist_id,))
-            tasks = cursor.fetchall
+            tasks = cursor.fetchall()
         connection.close()
         return {"tasks":tasks}
     except Exception as e:
