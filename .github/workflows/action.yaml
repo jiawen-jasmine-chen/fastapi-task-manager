@@ -3,6 +3,8 @@ name: Docker Hub Push
 on:
   push:
     branches: ["main"]
+    paths:
+      - "backend/**"
 
 jobs:
   push_to_registry:
@@ -33,3 +35,19 @@ jobs:
             ${{ steps.meta.outputs.tags }}
             benjaminstrandberg123/pss-backend:latest
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy_to_vm:
+    name: Deploy to VM
+    needs: push_to_registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into VM and restart backend deployment
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            echo "Restarting deployment"
+            k rollout restart development backend
+            echo "Deployment successfully restarted!"
