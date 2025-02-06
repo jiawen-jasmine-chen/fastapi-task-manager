@@ -19,9 +19,8 @@ jobs:
       - name: Get commit info
         id: commit
         run: |
-          git fetch --unshallow || true
-          MESSAGE="$(git log -1 --pretty-format:'%s')"
-          AUTHOR="$(git log -1 --pretty-format:'%an')"
+          MESSAGE="$(git log -1 --format:'%s')"
+          AUTHOR="$(git log -1 --format:'%an')"
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
  
