@@ -92,11 +92,16 @@ def create_task(description, assignee, due_date, todolist_id,owner_id):
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
-                VALUES (%s, 'Not Started', %s, %s, %s, %s);
+                VALUES (%s, 'Not Started', %s, %s, %s, %s)
+                RETURNING TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID;
             """, (description, assignee, due_date, todolist_id, owner_id))
+            
+            cols = [x[0] for x in cursor.description]
+            new_task = cursor.fetchone()
             connection.commit()
         connection.close()
-        return {"message":"Task created successfully"}
+        return {"message":"Task created successfully",
+                "task": dict(zip(cols,new_task))}
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
 
