@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 import pymysql
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from datetime import date
 
 app = FastAPI()
 
@@ -12,6 +14,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class TaskCreate(BaseModel):
+    description: str
+    assignee: int | None = None
+    due_date: date | None = None
+    todolist_id: int
+    owner_id: int
+
 
 def get_db_connection():
     return pymysql.connect(
@@ -86,19 +97,26 @@ def get_tasks(todolist_id):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/tasks")
-def create_task(description, assignee, due_date, todolist_id,owner_id):
+def create_task(task: TaskCreate):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
-                VALUES (%s, 'Not Started', %s, %s, %s, %s)
-                RETURNING TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID;
-            """, (description, assignee, due_date, todolist_id, owner_id))
+                VALUES (%s, 'Not Started', %s, %s, %s, %s);
+            """, (task.description, task.assignee, task.due_date, task.todolist_id, task.owner_id))
+            
+            connection.commit()
+            
+            task_id = cursor.lastrowid
+            
+            cursor.execute("""
+                SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID
+                FROM Task WHERE TaskID = %s
+            """, (task_id,))
             
             cols = [x[0] for x in cursor.description]
             new_task = cursor.fetchone()
-            connection.commit()
         connection.close()
         return {"message":"Task created successfully",
                 "task": dict(zip(cols,new_task))}
