@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import {
   View,
   Text,
@@ -13,48 +12,29 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
+import { fetchTasks, addTaskToServer, Task } from '../../api/taskService';
+import axios, { AxiosError } from 'axios';
 
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-}
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  
-  useEffect(() => {
-    fetch('http://backend.155.4.244.194.nip.io/taskstest') // 这里替换成你的后端 API 地址
-      .then(response => response.json()) 
-      .then(data => setTasks(data)) 
-      .catch(error => console.error('Error fetching tasks:', error));
-  }, []); // 空依赖数组，确保仅在组件挂载时请求数据
-
-  return (
-    <View>
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Text style={{ padding: 10 }}>{item.text}</Text>
-        )}
-      />
-    </View>
-  );
-
-
-// export default function HomeScreen() {
-//   const [tasks, setTasks] = useState<Task[]>([
-//     { id: '1', text: 'Drink 8 glasses of water', completed: false },
-//     { id: '2', text: 'Edit the PDF', completed: false },
-//     { id: '3', text: 'Write in a gratitude journal', completed: false },
-//     { id: '4', text: 'Stretch everyday for 15 mins', completed: false },
-//   ]);
-
   const [newTask, setNewTask] = useState('');
   const [bottomOffset] = useState(new Animated.Value(70));
   const flatListRef = useRef<FlatList>(null);
 
+  // 使用 useEffect 动态获取任务数据
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const fetchedTasks = await fetchTasks();
+        setTasks(fetchedTasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+    loadTasks();
+  }, []);
+  
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
       Animated.timing(bottomOffset, {
@@ -63,7 +43,6 @@ export default function HomeScreen() {
         useNativeDriver: false,
       }).start();
     });
-
     const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
       Animated.timing(bottomOffset, {
         toValue: 70,
@@ -71,7 +50,6 @@ export default function HomeScreen() {
         useNativeDriver: false,
       }).start();
     });
-
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
@@ -86,7 +64,7 @@ export default function HomeScreen() {
     );
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (newTask.trim().length === 0) {
       alert('Task cannot be empty!');
       return;
@@ -95,17 +73,36 @@ export default function HomeScreen() {
       alert('Task text is too long. Keep it under 50 characters.');
       return;
     }
-
-    if (newTask.trim()) {
-      const updatedTasks = [...tasks, { id: `${tasks.length + 1}`, text: newTask, completed: false }];
-      setTasks(updatedTasks);
-      setNewTask('');
-
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+  
+    const newTaskPayload = {
+      description: newTask.trim(),  // 确保是非空字符串
+      assignee: 1,                  // 确保是有效用户 ID
+      due_date: new Date().toISOString().split('T')[0],  // 格式为 YYYY-MM-DD
+      todolist_id: 1,
+      owner_id: 1,
+    };
+  
+    // 打印请求参数，查看所有字段是否正确
+    console.log('Payload being sent:', newTaskPayload);
+  
+    try {
+      const addedTask = await addTaskToServer(newTaskPayload);
+      if (addedTask) {
+        setTasks((prevTasks) => [...prevTasks, addedTask]);
+        setNewTask('');
+      } else {
+        alert('Failed to add task.');
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Backend error response:', error.response?.data);
+      } else {
+        console.error('Unknown error:', error);
+      }
+      alert('An error occurred while adding the task.');
     }
   };
+  
 
   const renderTask = ({ item }: { item: Task }) => (
     <View>
@@ -133,7 +130,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* 空状态或者列表部分 */}
+          {/* 空状态或者任务列表部分 */}
           {tasks.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No tasks yet. 🎉</Text>
@@ -144,7 +141,7 @@ export default function HomeScreen() {
               ref={flatListRef}
               data={tasks}
               renderItem={renderTask}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id.toString()}  // 确保 id 是唯一的字符串
               initialNumToRender={10}
               removeClippedSubviews={true}
               contentContainerStyle={styles.taskList}
@@ -152,11 +149,9 @@ export default function HomeScreen() {
             />
           )}
 
-          {/* 包裹输入框和背景条的容器 */}
+          {/* 输入框和加号按钮 */}
           <Animated.View style={[styles.inputWrapper, { bottom: bottomOffset }]}>
             <View style={styles.whiteBackgroundBar} />
-
-            {/* 输入框和加号按钮 */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -175,7 +170,6 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
