@@ -40,7 +40,7 @@ export default function HomeScreen() {
 
           setTodoLists(lists);
           if (lists.length > 0) {
-            
+
             console.log('Selected ToDoList:', lists[0].id); // ✅ 确保 `id` 正确
             setSelectedTodoList(lists[0].id); // 默认选第一个
           }
@@ -58,6 +58,7 @@ export default function HomeScreen() {
       const loadTasks = async () => {
         try {
           const fetchedTasks = await fetchTasks(selectedTodoList);
+          console.log("Fetched tasks:", fetchedTasks); // ✅ 确保 id 存在
           setTasks(fetchedTasks);
         } catch (error) {
           console.error('Error fetching tasks:', error);
@@ -172,8 +173,7 @@ export default function HomeScreen() {
             ref={flatListRef}
             data={tasks}
             renderItem={renderTask}
-            keyExtractor={(item) => item.id.toString()}
-            initialNumToRender={10}
+            keyExtractor={(item) => (item.id ? item.id.toString() : Math.random().toString())}            initialNumToRender={10}
             removeClippedSubviews={true}
             contentContainerStyle={homeStyles.taskList}
             showsVerticalScrollIndicator={false}

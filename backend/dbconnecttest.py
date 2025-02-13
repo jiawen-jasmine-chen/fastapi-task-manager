@@ -168,16 +168,34 @@ def create_todolist(user_id,shared):
     
     
 @app.get("/tasks/{todolist_id}")
-def get_tasks(todolist_id):
+def get_tasks(todolist_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from Task WHERE ToDoListID = %s;",(todolist_id,))
+            cursor.execute("SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID FROM Task WHERE ToDoListID = %s;", (todolist_id,))
             tasks = cursor.fetchall()
+        
         connection.close()
-        return {"tasks":tasks}
+
+        # ✅ 转换为 JSON 格式
+        formatted_tasks = [
+            {
+                "id": t[0],
+                "description": t[1],
+                "progress": t[2],
+                "assignee": t[3],
+                "due_date": t[4],
+                "created_at": t[5],
+                "todolist_id": t[6],
+                "owner_id": t[7],
+            }
+            for t in tasks
+        ]
+
+        return {"tasks": formatted_tasks}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     
 @app.post("/tasks")
 def create_task(task: TaskCreate):
