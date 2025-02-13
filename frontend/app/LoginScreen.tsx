@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { loginUser } from '../../api/authService'; // 调用登录 API
+import { loginUser } from '../api/authService'; // 调用登录 API
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');

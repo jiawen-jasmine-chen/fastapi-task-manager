@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import { fetchTasks, addTaskToServer, Task } from '../../api/taskService';
+import { fetchTasks, addTaskToServer, Task } from '../api/taskService';
 import axios, { AxiosError } from 'axios';
 
 
