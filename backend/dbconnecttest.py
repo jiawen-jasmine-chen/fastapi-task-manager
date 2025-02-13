@@ -51,22 +51,81 @@ def create_user(username: str):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            # Check whether the user name exists
-            cursor.execute("SELECT * FROM User WHERE Username = %s;", (username,))
+            cursor.execute("INSERT INTO User (Username) VALUES (%s);",(username,))
+            connection.commit()
+        connection.close()
+        return {"message": "User created successfully","username":username}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/register")
+def register_user(username: str):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # 检查用户名是否存在
+            cursor.execute("SELECT UserID FROM User WHERE Username = %s;", (username,))
             existing_user = cursor.fetchone()
 
             if existing_user:
-                return {"message": "User already exists", "status": "error"}
+                return {"success": False, "message": "Username already exists"}
 
-            # If no, create a user
+            # 插入新用户
             cursor.execute("INSERT INTO User (Username) VALUES (%s);", (username,))
             connection.commit()
-        
-        connection.close()
-        return {"message": "User created successfully", "username": username, "status": "success"}
+
+            # 获取新用户 ID
+            user_id = cursor.lastrowid
+
+        return {"success": True, "user_id": user_id, "message": "Registration successful"}
     
     except Exception as e:
+        connection.rollback()  # 遇到错误时回滚，避免脏数据
+        raise HTTPException(status_code=500, detail=f"Error during registration: {str(e)}")
+
+    finally:
+        connection.close()  # 确保连接总是被关闭
+
+
+@app.post("/login")
+def login_user(username: str):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT UserID FROM User WHERE Username = %s;", (username,))
+            user = cursor.fetchone()
+
+        if user:
+            return {"success": True, "user_id": user[0], "message": "Login successful"}
+        else:
+            return {"success": False, "message": "User not found"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during login: {str(e)}")
+
+    finally:
+        connection.close()  # 确保数据库连接关闭
+
+
+
+@app.get("/users/{user_id}")
+def check_user(user_id: int):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM User WHERE UserID = %s;", (user_id,))
+            existing_user = cursor.fetchone()
+        connection.close()
+
+        if existing_user:
+            return {"exists": True, "user": existing_user, "message": "User exists"}
+        else:
+            return {"exists": False, "message": "User not found"}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @app.get("/todolists/{user_id}")

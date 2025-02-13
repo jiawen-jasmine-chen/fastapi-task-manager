@@ -10,7 +10,12 @@ declare module 'react-native-parallax-scroll-view' {
       renderBackground?: () => JSX.Element;
       fadeOutForeground?: boolean;
     }
+
+
   
     export default class ParallaxScrollView extends Component<ParallaxScrollViewProps> {}
   }
-  
+
+declare module 'redux-persist/integration/react' {
+    export const PersistGate: any;
+}
