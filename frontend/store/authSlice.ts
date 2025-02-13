@@ -1,25 +1,29 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface UserState {
-  userId: string | null;
+  userId: number | null;  // ✅ 让 userId 存 `number`
+  username: string | null;
 }
 
 const initialState: UserState = {
   userId: null,
+  username: null,
 };
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setUserId: (state, action) => {
-      state.userId = action.payload;
+    setUser: (state, action: PayloadAction<{ userId: number; username: string }>) => {  // ✅ userId 必须是 number
+      state.userId = action.payload.userId;
+      state.username = action.payload.username;
     },
     logout: (state) => {
       state.userId = null;
+      state.username = null;
     },
   },
 });
 
-export const { setUserId, logout } = userSlice.actions;
+export const { setUser, logout } = userSlice.actions;
 export default userSlice.reducer;

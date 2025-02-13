@@ -1,20 +1,16 @@
 import axios from 'axios';
 
 export interface Task {
-  id: string;
+  id: number;  // ✅ 确保 id 是 number
   text: string;
   completed: boolean;
 }
 
-interface RawTask {
-  tasks: [number, string, number][];
-}
-
 // 后端返回的新任务数据结构
 interface CreatedTaskResponse {
-  id: number;
-  description: string;
-  completed: number;
+  TaskID: number;  // ✅ 这里 TaskID 也是 number
+  Description: string;
+  Progress: string;
 }
 
 // 用于向后端添加新任务的参数结构
@@ -26,29 +22,14 @@ interface NewTaskPayload {
   owner_id: number;
 }
 
-export const fetchTasks = async (): Promise<Task[]> => {
-  try {
-    const response = await axios.get<RawTask>('http://backend.155.4.244.194.nip.io/taskstest');
-    const transformedTasks: Task[] = response.data.tasks.map((taskArray) => ({
-      id: taskArray[0].toString(),
-      text: taskArray[1],
-      completed: taskArray[2] === 1,
-    }));
-    return transformedTasks;
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    return [];
-  }
-};
-
 export const addTaskToServer = async (payload: NewTaskPayload): Promise<Task | null> => {
   try {
     const response = await axios.post('http://backend.155.4.244.194.nip.io/tasks', payload);
-    const createdTask = response.data.task;
+    const createdTask: CreatedTaskResponse = response.data.task; // ✅ 明确类型
 
-    // 确保使用后端返回的 TaskID 作为前端的 id
+    // ✅ 直接返回 number 类型的 id
     return {
-      id: createdTask.TaskID.toString(),  // 将 TaskID 映射到 id
+      id: createdTask.TaskID, // ✅ 这里不用转换成 string
       text: createdTask.Description,
       completed: createdTask.Progress !== 'Not Started',
     };
