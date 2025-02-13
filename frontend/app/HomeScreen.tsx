@@ -5,15 +5,14 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  StyleSheet,
   Keyboard,
   Animated,
   SafeAreaView,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import { fetchTodoLists, fetchTasks } from '../api/todoService';
-import { Task, addTaskToServer } from '../api/taskService';
+import { fetchTodoLists } from '../api/todoService';
+import { Task, fetchTasks, addTaskToServer } from '../api/taskService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
@@ -21,14 +20,14 @@ import homeStyles from '../styles/homeStyles';
 export default function HomeScreen() {
   const userId = useSelector((state: RootState) => state.user.userId);
   const username = useSelector((state: RootState) => state.user.username);
+
   const [todoLists, setTodoLists] = useState<{ id: number; name: string }[]>([]);
   const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
   const [bottomOffset] = useState(new Animated.Value(70));
-  const flatListRef = useRef<FlatList>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
 
-  
+  const flatListRef = useRef<FlatList>(null);
 
   // **获取用户的 ToDoLists**
   useEffect(() => {
@@ -36,13 +35,12 @@ export default function HomeScreen() {
       const loadTodoLists = async () => {
         try {
           const lists = await fetchTodoLists(userId);
-          console.log('Fetched TodoLists:', lists); // ✅ 检查数据
+          console.log('Fetched TodoLists:', lists);
 
           setTodoLists(lists);
           if (lists.length > 0) {
-
-            console.log('Selected ToDoList:', lists[0].id); // ✅ 确保 `id` 正确
-            setSelectedTodoList(lists[0].id); // 默认选第一个
+            setSelectedTodoList(lists[0].id);
+            console.log('Selected ToDoList:', lists[0].id);
           }
         } catch (error) {
           console.error('Error fetching ToDo lists:', error);
@@ -58,7 +56,7 @@ export default function HomeScreen() {
       const loadTasks = async () => {
         try {
           const fetchedTasks = await fetchTasks(selectedTodoList);
-          console.log("Fetched tasks:", fetchedTasks); // ✅ 确保 id 存在
+          console.log('Fetched tasks from backend:', fetchedTasks);
           setTasks(fetchedTasks);
         } catch (error) {
           console.error('Error fetching tasks:', error);
@@ -68,6 +66,7 @@ export default function HomeScreen() {
     }
   }, [selectedTodoList]);
 
+  // **键盘弹起时调整输入框位置**
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
       Animated.timing(bottomOffset, {
@@ -98,8 +97,6 @@ export default function HomeScreen() {
     );
   };
 
-  
-
   // **添加任务**
   const addTask = async () => {
     if (newTask.trim().length === 0) {
@@ -117,18 +114,23 @@ export default function HomeScreen() {
 
     const newTaskPayload = {
       description: newTask.trim(),
-      assignee: userId, // 确保 userId 是 number
+      assignee: userId,
       due_date: new Date().toISOString().split('T')[0],
-      todolist_id: selectedTodoList, // 选中的 ToDoList
+      todolist_id: selectedTodoList,
       owner_id: userId,
     };
 
     console.log('Payload being sent:', newTaskPayload);
-
     try {
       const addedTask = await addTaskToServer(newTaskPayload);
       if (addedTask) {
-        setTasks((prevTasks) => [...prevTasks, addedTask]); // ✅ 确保 Task 结构一致
+        // ✅ 方式 1：强制刷新任务列表（从后端重新获取）
+        const updatedTasks = await fetchTasks(selectedTodoList);
+        setTasks(updatedTasks); // 这样确保 UI 立即更新
+  
+        // ✅ 方式 2：稍微延迟 `setTasks` 让 React 先完成 UI 渲染
+        // setTimeout(() => setTasks([...tasks, addedTask]), 100);
+  
         setNewTask('');
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -142,6 +144,7 @@ export default function HomeScreen() {
     }
   };
 
+  
   // **渲染任务**
   const renderTask = ({ item }: { item: Task }) => (
     <View>
@@ -152,7 +155,7 @@ export default function HomeScreen() {
           style={homeStyles.checkbox}
         />
         <Text style={[homeStyles.taskText, item.completed && homeStyles.completedTask]}>
-          {item.text} {/* ✅ 确保 `text` 而不是 `description` */}
+          {item.description}
         </Text>
       </View>
       <View style={homeStyles.separator} />
@@ -163,22 +166,33 @@ export default function HomeScreen() {
     <SafeAreaView style={homeStyles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={homeStyles.innerContainer}>
+          {/* 标题 */}
           <View style={homeStyles.header}>
             <View style={homeStyles.titleContainer}>
               <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
             </View>
           </View>
 
-          <FlatList
-            ref={flatListRef}
-            data={tasks}
-            renderItem={renderTask}
-            keyExtractor={(item) => (item.id ? item.id.toString() : Math.random().toString())}            initialNumToRender={10}
-            removeClippedSubviews={true}
-            contentContainerStyle={homeStyles.taskList}
-            showsVerticalScrollIndicator={false}
-          />
+          {/* 任务列表 */}
+          {tasks.length === 0 ? (
+            <View style={homeStyles.emptyState}>
+              <Text style={homeStyles.emptyStateText}>No tasks found! 🎉</Text>
+              <Text style={homeStyles.emptySubText}>Try adding a new task below.</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={tasks}
+              keyExtractor={(item, index) => (item.id ? item.id.toString() : `temp-${index}`)}
+              renderItem={renderTask}
+              initialNumToRender={10}
+              removeClippedSubviews={true}
+              contentContainerStyle={homeStyles.taskList}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
 
+          {/* 输入框 */}
           <Animated.View style={[homeStyles.inputWrapper, { bottom: bottomOffset }]}>
             <View style={homeStyles.whiteBackgroundBar} />
             <View style={homeStyles.inputContainer}>

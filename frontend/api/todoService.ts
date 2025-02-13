@@ -15,11 +15,12 @@ export const fetchTodoLists = async (userId: number) => {
 
 // **获取 ToDoList 里的任务**
 export const fetchTasks = async (todolistId: number) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/tasks/${todolistId}`);
-    return response.data.tasks;
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    return [];
-  }
-};
+    try {
+      const response = await axios.get(`${API_BASE_URL}/tasks/${todolistId}`);
+      console.log("Fetched tasks from backend:", response.data.tasks); // ✅ 检查数据
+      return response.data.tasks;
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      return [];
+    }
+  };

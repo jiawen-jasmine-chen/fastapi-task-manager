@@ -44,7 +44,6 @@ export default function LoginScreen() {
     }
   };
 
-  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -60,6 +59,11 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
+
+      {/* ✅ 切换到注册界面的按钮 */}
+      <TouchableOpacity onPress={() => router.push('/RegisterScreen')}>
+        <Text style={styles.switchText}>Don't have an account? Register</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -70,4 +74,5 @@ const styles = StyleSheet.create({
   input: { width: '80%', padding: 10, borderWidth: 1, borderRadius: 5, marginBottom: 15, color: '#000' },
   button: { backgroundColor: '#000', padding: 10, borderRadius: 5 },
   buttonText: { color: '#fff', fontSize: 18 },
+  switchText: { marginTop: 15, color: '#000', fontSize: 16, textDecorationLine: 'underline' },
 });
