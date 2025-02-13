@@ -12,29 +12,61 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import { fetchTasks, addTaskToServer, Task } from '../api/taskService';
-import axios, { AxiosError } from 'axios';
-
+import { fetchTodoLists, fetchTasks } from '../api/todoService';
+import { Task, addTaskToServer } from '../api/taskService';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
+import homeStyles from '../styles/homeStyles';
 
 export default function HomeScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const userId = useSelector((state: RootState) => state.user.userId);
+  const username = useSelector((state: RootState) => state.user.username);
+  const [todoLists, setTodoLists] = useState<{ id: number; name: string }[]>([]);
+  const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
   const [newTask, setNewTask] = useState('');
   const [bottomOffset] = useState(new Animated.Value(70));
   const flatListRef = useRef<FlatList>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  // 使用 useEffect 动态获取任务数据
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        const fetchedTasks = await fetchTasks();
-        setTasks(fetchedTasks);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
-    loadTasks();
-  }, []);
   
+
+  // **获取用户的 ToDoLists**
+  useEffect(() => {
+    if (userId) {
+      const loadTodoLists = async () => {
+        try {
+          const lists = await fetchTodoLists(userId);
+          console.log('Fetched TodoLists:', lists); // ✅ 检查数据
+
+          setTodoLists(lists);
+          if (lists.length > 0) {
+            
+            console.log('Selected ToDoList:', lists[0].id); // ✅ 确保 `id` 正确
+            setSelectedTodoList(lists[0].id); // 默认选第一个
+          }
+        } catch (error) {
+          console.error('Error fetching ToDo lists:', error);
+        }
+      };
+      loadTodoLists();
+    }
+  }, [userId]);
+
+  // **获取选定 ToDoList 的任务**
+  useEffect(() => {
+    if (selectedTodoList) {
+      const loadTasks = async () => {
+        try {
+          const fetchedTasks = await fetchTasks(selectedTodoList);
+          setTasks(fetchedTasks);
+        } catch (error) {
+          console.error('Error fetching tasks:', error);
+        }
+      };
+      loadTasks();
+    }
+  }, [selectedTodoList]);
+
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
       Animated.timing(bottomOffset, {
@@ -56,7 +88,8 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const toggleTaskCompletion = (id: string) => {
+  // **任务完成状态切换**
+  const toggleTaskCompletion = (id: number) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === id ? { ...task, completed: !task.completed } : task
@@ -64,6 +97,9 @@ export default function HomeScreen() {
     );
   };
 
+  
+
+  // **添加任务**
   const addTask = async () => {
     if (newTask.trim().length === 0) {
       alert('Task cannot be empty!');
@@ -73,95 +109,88 @@ export default function HomeScreen() {
       alert('Task text is too long. Keep it under 50 characters.');
       return;
     }
-  
+    if (!selectedTodoList || !userId) {
+      alert('Missing ToDoList ID or User ID.');
+      return;
+    }
+
     const newTaskPayload = {
-      description: newTask.trim(),  // 确保是非空字符串
-      assignee: 1,                  // 确保是有效用户 ID
-      due_date: new Date().toISOString().split('T')[0],  // 格式为 YYYY-MM-DD
-      todolist_id: 1,
-      owner_id: 1,
+      description: newTask.trim(),
+      assignee: userId, // 确保 userId 是 number
+      due_date: new Date().toISOString().split('T')[0],
+      todolist_id: selectedTodoList, // 选中的 ToDoList
+      owner_id: userId,
     };
-  
-    // 打印请求参数，查看所有字段是否正确
+
     console.log('Payload being sent:', newTaskPayload);
-  
+
     try {
       const addedTask = await addTaskToServer(newTaskPayload);
       if (addedTask) {
-        setTasks((prevTasks) => [...prevTasks, addedTask]);
+        setTasks((prevTasks) => [...prevTasks, addedTask]); // ✅ 确保 Task 结构一致
         setNewTask('');
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       } else {
         alert('Failed to add task.');
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Backend error response:', error.response?.data);
-      } else {
-        console.error('Unknown error:', error);
-      }
+      console.error('Error adding task:', error);
       alert('An error occurred while adding the task.');
     }
   };
-  
 
+  // **渲染任务**
   const renderTask = ({ item }: { item: Task }) => (
     <View>
-      <View style={styles.taskRow}>
+      <View style={homeStyles.taskRow}>
         <Checkbox
           value={item.completed}
           onValueChange={() => toggleTaskCompletion(item.id)}
-          style={styles.checkbox}
+          style={homeStyles.checkbox}
         />
-        <Text style={[styles.taskText, item.completed && styles.completedTask]}>{item.text}</Text>
+        <Text style={[homeStyles.taskText, item.completed && homeStyles.completedTask]}>
+          {item.text} {/* ✅ 确保 `text` 而不是 `description` */}
+        </Text>
       </View>
-      <View style={styles.separator} />
+      <View style={homeStyles.separator} />
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={homeStyles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.innerContainer}>
-          {/* 标题部分 */}
-          <View style={styles.header}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.headerText}>Today</Text>
-              <Text style={styles.headerSubText}>26 Dec</Text>
+        <View style={homeStyles.innerContainer}>
+          <View style={homeStyles.header}>
+            <View style={homeStyles.titleContainer}>
+              <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
             </View>
           </View>
 
-          {/* 空状态或者任务列表部分 */}
-          {tasks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No tasks yet. 🎉</Text>
-              <Text style={styles.emptySubText}>Enjoy your day or add a new task below!</Text>
-            </View>
-          ) : (
-            <FlatList
-              ref={flatListRef}
-              data={tasks}
-              renderItem={renderTask}
-              keyExtractor={(item) => item.id.toString()}  // 确保 id 是唯一的字符串
-              initialNumToRender={10}
-              removeClippedSubviews={true}
-              contentContainerStyle={styles.taskList}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
+          <FlatList
+            ref={flatListRef}
+            data={tasks}
+            renderItem={renderTask}
+            keyExtractor={(item) => item.id.toString()}
+            initialNumToRender={10}
+            removeClippedSubviews={true}
+            contentContainerStyle={homeStyles.taskList}
+            showsVerticalScrollIndicator={false}
+          />
 
-          {/* 输入框和加号按钮 */}
-          <Animated.View style={[styles.inputWrapper, { bottom: bottomOffset }]}>
-            <View style={styles.whiteBackgroundBar} />
-            <View style={styles.inputContainer}>
+          <Animated.View style={[homeStyles.inputWrapper, { bottom: bottomOffset }]}>
+            <View style={homeStyles.whiteBackgroundBar} />
+            <View style={homeStyles.inputContainer}>
               <TextInput
-                style={styles.input}
+                style={homeStyles.input}
                 placeholder="Write a task..."
                 value={newTask}
                 onChangeText={setNewTask}
                 onSubmitEditing={addTask}
               />
-              <TouchableOpacity style={styles.addButton} onPress={addTask}>
-                <Text style={styles.addButtonText}>+</Text>
+              <TouchableOpacity style={homeStyles.addButton} onPress={addTask}>
+                <Text style={homeStyles.addButtonText}>+</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -170,114 +199,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  innerContainer: {
-    flex: 1,
-  },
-  header: {
-    paddingTop: 40,
-    paddingBottom: 20,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'flex-start',
-    gap: 8,
-  },
-  headerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  headerSubText: {
-    fontSize: 20,
-    color: '#808080',
-  },
-  taskList: {
-    paddingHorizontal: 20,
-    paddingBottom: 150,
-  },
-  taskRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  checkbox: {
-    marginRight: 10,
-  },
-  taskText: {
-    fontSize: 18,
-  },
-  completedTask: {
-    textDecorationLine: 'line-through',
-    color: '#999',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#dcdcdc',
-    marginVertical: 5,
-  },
-  inputWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    backgroundColor: '#ffffff',
-  },
-  whiteBackgroundBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 500,
-    backgroundColor: '#ffffff',
-    zIndex: 0,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    padding: 10,
-    marginHorizontal: 10,
-    marginBottom: -5,
-  },
-  input: {
-    flex: 1,
-    fontSize: 18,
-  },
-  addButton: {
-    backgroundColor: '#6c63ff',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 24,
-    color: '#ffffff',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyStateText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  emptySubText: {
-    fontSize: 16,
-    color: '#808080',
-    textAlign: 'center',
-  },
-});

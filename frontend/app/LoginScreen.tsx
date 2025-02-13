@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { useRouter } from 'expo-router';
 import { loginUser } from '../api/authService'; // 调用登录 API
+import { setUser } from '../store/authSlice';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (username.trim().length === 0) {
@@ -12,23 +17,34 @@ export default function LoginScreen() {
     }
 
     try {
-      const response = await loginUser(username); // 调用登录 API
+      const response = await loginUser(username);
 
       if (!response.success) {
-        alert(response.message); // 用户名不存在或登录失败
+        alert(response.message);
         return;
       }
 
-      // **弹窗显示 "Hello, 用户名"**
-      Alert.alert('Login Successful', `Hello, ${username}!`, [{ text: 'OK' }]);
+      // ✅ 确保 userId 存的是 number
+      const userIdNumber = Number(response.user_id);
+      if (isNaN(userIdNumber)) {
+        alert('Invalid user ID received.');
+        return;
+      }
 
-      // **暂时不跳转页面**
+      // 存储用户信息到 Redux
+      dispatch(setUser({ userId: userIdNumber, username: username }));
+
+      // 弹窗显示 "Hello, 用户名"
+      Alert.alert('Login Successful', `Hello, ${username}!`, [
+        { text: 'OK', onPress: () => router.replace('/HomeScreen') }
+      ]);
     } catch (error) {
       console.error('Error during login:', error);
       alert('An error occurred. Please try again.');
     }
   };
 
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>

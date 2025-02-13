@@ -129,16 +129,30 @@ def check_user(user_id: int):
 
 
 @app.get("/todolists/{user_id}")
-def get_todolists(user_id):
+def get_todolists(user_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM ToDoList WHERE UserID = %s;",(user_id,))
+            cursor.execute("SELECT ToDoListID, SharedFlag, UserID FROM ToDoList WHERE UserID = %s;", (user_id,))
             lists = cursor.fetchall()
+
         connection.close()
-        return{"todolists":lists}
+
+        # ✅ 如果 `lists` 为空，返回 404，而不是返回空列表
+        if not lists:
+            raise HTTPException(status_code=404, detail=f"No ToDoLists found for user_id {user_id}")
+
+        # ✅ 转换数据结构
+        formatted_lists = [{"id": l[0], "shared": l[1], "userId": l[2]} for l in lists]
+
+        return {"todolists": formatted_lists}
+
+    except HTTPException as e:
+        raise e  # 直接抛出 FastAPI 的 HTTPException，保持原有错误代码
     except Exception as e:
-        raise HTTPException(status_code=500,detail = str(e))
+        # ✅ 捕获所有其他错误，并返回 500
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
     
 @app.post("/todolists")
 def create_todolist(user_id,shared):
