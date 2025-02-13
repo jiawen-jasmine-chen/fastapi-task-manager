@@ -47,17 +47,27 @@ def get_users():
 
 
 @app.post("/users")
-def create_user(username):
+def create_user(username: str):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO User (Username) VALUES (%s);",(username,))
+            # Check whether the user name exists
+            cursor.execute("SELECT * FROM User WHERE Username = %s;", (username,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                return {"message": "User already exists", "status": "error"}
+
+            # If no, create a user
+            cursor.execute("INSERT INTO User (Username) VALUES (%s);", (username,))
             connection.commit()
+        
         connection.close()
-        return {"message": "User created successfully","username":username}
+        return {"message": "User created successfully", "username": username, "status": "success"}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.get("/todolists/{user_id}")
 def get_todolists(user_id):
