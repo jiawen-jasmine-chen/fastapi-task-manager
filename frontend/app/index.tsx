@@ -1,17 +1,18 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router'; // ✅ 仅使用 Expo Router
+import { RootStackParamList } from '../types/types';
 
 export default function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // ⏳ 3秒后自动跳转到注册页面
     const timeout = setTimeout(() => {
+      // 跳转到注册页（路径必须与文件名一致）
       router.replace('/RegisterScreen');
     }, 3000);
 
-    return () => clearTimeout(timeout); // 清除定时器，防止内存泄漏
+    return () => clearTimeout(timeout);
   }, []);
 
   return (
@@ -22,6 +23,14 @@ export default function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  title: { fontSize: 48, fontWeight: 'bold', color: '#fff' }, // ✅ 白色大号文本
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
 });

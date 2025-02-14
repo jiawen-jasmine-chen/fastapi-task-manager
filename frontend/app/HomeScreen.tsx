@@ -16,8 +16,13 @@ import { Task, fetchTasks, addTaskToServer } from '../api/taskService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
+import { useRouter } from 'expo-router';
+import { RootStackParamList } from '../types/types';
+
+
 
 export default function HomeScreen() {
+  const router = useRouter();
   const userId = useSelector((state: RootState) => state.user.userId);
   const username = useSelector((state: RootState) => state.user.username);
 
@@ -25,9 +30,11 @@ export default function HomeScreen() {
   const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
-  const [bottomOffset] = useState(new Animated.Value(70));
+  //const [bottomOffset] = useState(new Animated.Value(70));
+  const bottomOffset = useRef(new Animated.Value(70)).current;
 
   const flatListRef = useRef<FlatList>(null);
+  
 
   // **获取用户的 ToDoLists**
   useEffect(() => {
@@ -144,11 +151,26 @@ export default function HomeScreen() {
     }
   };
 
+  const renderTask = ({ item }: { item: Task }) => {
+    const taskWithDefaults = {
+      ...item,
+      todolist_id: item.todolist_id ?? -1,
+      owner_id: item.owner_id ?? -1,
+      completed: item.completed ?? false
+    };
   
-  // **渲染任务**
-  const renderTask = ({ item }: { item: Task }) => (
-    <View>
-      <View style={homeStyles.taskRow}>
+    return (
+      <TouchableOpacity
+        style={homeStyles.taskRow}
+        onPress={() => {
+          console.log('Navigating with task:', taskWithDefaults);
+          router.push({
+            pathname: '/TaskDetailScreen',
+            params: { task: JSON.stringify(taskWithDefaults) },
+          });
+        }}
+      >
+        {/* ✅ 添加 Checkbox 和 Text 组件 */}
         <Checkbox
           value={item.completed}
           onValueChange={() => toggleTaskCompletion(item.id)}
@@ -157,10 +179,10 @@ export default function HomeScreen() {
         <Text style={[homeStyles.taskText, item.completed && homeStyles.completedTask]}>
           {item.description}
         </Text>
-      </View>
-      <View style={homeStyles.separator} />
-    </View>
-  );
+      </TouchableOpacity>
+    );
+  };
+
 
   return (
     <SafeAreaView style={homeStyles.container}>
@@ -208,6 +230,16 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </Animated.View>
+
+          {/* <View style={homeStyles.listcontainer}>
+            <TouchableOpacity
+              onPress={() => router.push('/ListScreen')}
+              style={homeStyles.listButton}
+            >
+              <Text style={homeStyles.addButtonText}>View Tasklists</Text>
+            </TouchableOpacity>
+            </View> */}
+
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>

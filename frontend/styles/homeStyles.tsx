@@ -105,6 +105,25 @@ const homeStyles = StyleSheet.create({
     color: '#808080',
     textAlign: 'center',
   },
+  listButton: {
+    backgroundColor: '#6c63ff',
+    padding: 10,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  listButtonText: {
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 14,
+  },
+  listcontainer: {
+    paddingTop: 15,
+    paddingBottom: 5,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default homeStyles;
