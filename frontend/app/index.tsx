@@ -10,6 +10,7 @@ export default function SplashScreen() {
     const timeout = setTimeout(() => {
       // 跳转到注册页（路径必须与文件名一致）
       router.replace('/RegisterScreen');
+      // router.replace('/CalendarScreen');
     }, 3000);
 
     return () => clearTimeout(timeout);
