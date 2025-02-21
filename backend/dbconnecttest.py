@@ -133,7 +133,7 @@ def get_todolists(user_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT ToDoListID, SharedFlag, UserID FROM ToDoList WHERE UserID = %s;", (user_id,))
+            cursor.execute("SELECT ToDoListID, Name, SharedFlag, UserID, InviteCode FROM ToDoList WHERE UserID = %s;", (user_id,))
             lists = cursor.fetchall()
 
         connection.close()
@@ -143,7 +143,7 @@ def get_todolists(user_id: int):
             raise HTTPException(status_code=404, detail=f"No ToDoLists found for user_id {user_id}")
 
         # ✅ 转换数据结构
-        formatted_lists = [{"id": l[0], "shared": l[1], "userId": l[2]} for l in lists]
+        formatted_lists = [{"id": l[0], "name": l[1], "shared": l[2], "userId": l[3], "inviteCode":l[4]} for l in lists]
 
         return {"todolists": formatted_lists}
 
@@ -155,14 +155,14 @@ def get_todolists(user_id: int):
 
     
 @app.post("/todolists")
-def create_todolist(user_id,shared):
+def create_todolist(user_id,shared,name):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID) VALUES(%s, %s);",(shared,user_id))
+            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID,Name) VALUES(%s, %s,%s);",(shared,user_id,name))
             connection.commit()
         connection.close()
-        return {"message": "Todo list successfully created!"}
+        return {"message": "Todo list successfully created!","name":name}
     except Exception as e:
         raise HTTPException(status_code=500,detail = str(e))   
     
