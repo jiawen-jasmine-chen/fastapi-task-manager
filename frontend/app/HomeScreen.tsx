@@ -8,10 +8,12 @@ import {
   Keyboard,
   SafeAreaView,
   TouchableWithoutFeedback,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import { fetchTodoLists, createTodoList } from '../api/todoService'; // API Calls
+import { fetchTodoLists, createTodoList } from '../api/todoService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
@@ -27,7 +29,6 @@ export default function HomeScreen() {
   const [newListName, setNewListName] = useState('');
   const [isShared, setIsShared] = useState(false);
 
-  // Fetch user's ToDoLists on load
   useEffect(() => {
     if (userId) {
       const loadTodoLists = async () => {
@@ -42,7 +43,6 @@ export default function HomeScreen() {
     }
   }, [userId]);
 
-  // Handle creating a new ToDoList
   const handleCreateTodoList = async () => {
     if (newListName.trim() === '') {
       Alert.alert('List name cannot be empty!');
@@ -56,69 +56,90 @@ export default function HomeScreen() {
 
     try {
       const newList = await createTodoList(userId, isShared ? 1 : 0, newListName);
+
+    
+      console.log("newList", newList);
+
       setTodoLists((prev) => [...prev, { id: newList.id, name: newListName }]);
       setNewListName('');
       setIsShared(false);
 
       Alert.alert('ToDoList Created', `List "${newListName}" has been created successfully!`);
+
+      if (isShared && newList.inviteCode){
+        Alert.alert(
+          'Invite Code',
+          `Share this code with others to join the list:\n\n${newList.inviteCode}`,
+          [{ text: 'OK' }]
+        );
+      }
+
     } catch (error) {
       console.error('Error creating ToDoList:', error);
       Alert.alert('An error occurred while creating the ToDoList.');
     }
   };
 
-  // Navigate to specific ToDoList screen
-  const handleListPress = (listId: number) => {
-    router.push(`/ToDoListDetailScreen/${listId}`);
+  const handleListPress = (listId: number, listName: string) => {
+    router.push({
+      pathname: '../ToDoListDetailScreen',
+      params: { listId: listId.toString(), listName: listName }
+    });
   };
 
   return (
     <SafeAreaView style={homeStyles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={homeStyles.innerContainer}>
-          {/* Header */}
-          <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={homeStyles.innerContainer}>
+            {/* Header */}
+            <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
 
-          {/* 🟢 ToDoList Creation */}
-          <View style={newstyles.createListContainer}>
-            <TextInput
-              style={newstyles.input}
-              placeholder="Enter ToDoList Name"
-              value={newListName}
-              onChangeText={setNewListName}
-              placeholderTextColor="#888"
+            {/* 🟡 ToDoList Display */}
+            <FlatList
+              data={todoLists}
+              keyExtractor={(item, index) => `${item?.id ?? 'key'}-${index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={newstyles.listButton}
+                  onPress={() => handleListPress(item.id, item.name)}
+                >
+                  <Text style={newstyles.listButtonText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={newstyles.emptyStateText}>No ToDoLists yet. Create one!</Text>}
+              contentContainerStyle={{ paddingBottom: 150 }} // ⬅️ Space for bottom input
             />
 
-            <View style={newstyles.checkboxContainer}>
-              <Checkbox
-                value={isShared}
-                onValueChange={setIsShared}
-                style={newstyles.checkbox}
+            {/* 🟢 ToDoList Creation at Bottom */}
+            <View style={newstyles.createListContainerBottom}>
+              <TextInput
+                style={newstyles.input}
+                placeholder="Enter ToDoList Name"
+                value={newListName}
+                onChangeText={setNewListName}
+                placeholderTextColor="#888"
               />
-              <Text style={newstyles.checkboxLabel}>Shared List</Text>
-            </View>
 
-            <TouchableOpacity style={newstyles.createButton} onPress={handleCreateTodoList}>
-              <Text style={newstyles.createButtonText}>Create ToDoList</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={newstyles.checkboxContainer}>
+                <Checkbox
+                  value={isShared}
+                  onValueChange={setIsShared}
+                  style={newstyles.checkbox}
+                />
+                <Text style={newstyles.checkboxLabel}>Shared List</Text>
+              </View>
 
-          {/* 🟡 ToDoList Display */}
-          <FlatList
-            data={todoLists}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={newstyles.listButton}
-                onPress={() => handleListPress(item.id)}
-              >
-                <Text style={newstyles.listButtonText}>{item.name}</Text>
+              <TouchableOpacity style={newstyles.createButton} onPress={handleCreateTodoList}>
+                <Text style={newstyles.createButtonText}>Create ToDoList</Text>
               </TouchableOpacity>
-            )}
-            ListEmptyComponent={<Text style={newstyles.emptyStateText}>No ToDoLists yet. Create one!</Text>}
-          />
-        </View>
-      </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

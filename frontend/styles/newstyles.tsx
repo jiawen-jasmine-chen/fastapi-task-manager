@@ -1,29 +1,15 @@
 import { StyleSheet } from 'react-native';
 
-const ToDoListStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  innerContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-
-  // ✅ ToDoList Creation Styles
-  createListContainer: {
-    marginBottom: 20,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#dcdcdc',
-    borderRadius: 8,
+const newstyles = StyleSheet.create({
+  createListContainerBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#f9f9f9',
+    padding: 15,
+    borderTopWidth: 1,
+    borderColor: '#dcdcdc',
   },
   input: {
     borderWidth: 1,
@@ -53,8 +39,6 @@ const ToDoListStyles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
   },
-
-  // ✅ ToDoList Display Styles
   listButton: {
     padding: 15,
     backgroundColor: '#e0e0e0',
@@ -64,14 +48,12 @@ const ToDoListStyles = StyleSheet.create({
   listButtonText: {
     fontSize: 18,
   },
-
-  // ✅ 🟡 Empty State Text for FlatList
   emptyStateText: {
     textAlign: 'center',
+    color: '#aaa',
     marginTop: 20,
     fontSize: 16,
-    color: '#888',
   },
 });
 
-export default ToDoListStyles;
+export default newstyles;
