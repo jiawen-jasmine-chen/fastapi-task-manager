@@ -195,6 +195,15 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* <View style={homeStyles.listcontainer}>
+            <TouchableOpacity
+              onPress={() => router.push('/CalendarScreen')}
+              style={homeStyles.listButton}
+            >
+              <Text style={homeStyles.addButtonText}>View Tasklists</Text>
+            </TouchableOpacity>
+            </View> */}
+
           {/* 任务列表 */}
           {tasks.length === 0 ? (
             <View style={homeStyles.emptyState}>
@@ -230,16 +239,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </Animated.View>
-
-          {/* <View style={homeStyles.listcontainer}>
-            <TouchableOpacity
-              onPress={() => router.push('/ListScreen')}
-              style={homeStyles.listButton}
-            >
-              <Text style={homeStyles.addButtonText}>View Tasklists</Text>
-            </TouchableOpacity>
-            </View> */}
-
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
