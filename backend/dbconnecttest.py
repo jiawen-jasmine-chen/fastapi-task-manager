@@ -1,9 +1,20 @@
 from fastapi import FastAPI, HTTPException
-import pymysql
-import os
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
+import pymysql
+import os
+import random
+import string
 from datetime import date
+
+
+
+
+def generate_invite_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
 
 app = FastAPI()
 
@@ -46,17 +57,17 @@ def get_users():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/users")
-def create_user(username: str):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO User (Username) VALUES (%s);",(username,))
-            connection.commit()
-        connection.close()
-        return {"message": "User created successfully","username":username}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/users")
+# def create_user(username: str):
+#     try:
+#         connection = get_db_connection()
+#         with connection.cursor() as cursor:
+#             cursor.execute("INSERT INTO User (Username) VALUES (%s);",(username,))
+#             connection.commit()
+#         connection.close()
+#         return {"message": "User created successfully","username":username}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/register")
@@ -158,13 +169,45 @@ def get_todolists(user_id: int):
 def create_todolist(user_id,shared):
     try:
         connection = get_db_connection()
+        invite_code = generate_invite_code() if shared else None
+        
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID) VALUES(%s, %s);",(shared,user_id))
+            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID, InviteCode) VALUES(%s, %s, %s);",(shared,user_id,invite_code))
             connection.commit()
+            
+            todolist_id = cursor.lastrowid
         connection.close()
-        return {"message": "Todo list successfully created!"}
+        return {"message": "Todo list successfully created!","todolist_id":todolist_id,"invite_code":invite_code}
     except Exception as e:
         raise HTTPException(status_code=500,detail = str(e))   
+    
+@app.post("/todolists/join")
+def join_todolist(user_id:int,invite_code:str):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT ToDoListID FROM ToDoList WHERE InviteCode = %s;",(invite_code,))
+            todolist = cursor.fetchone()
+            if not todolist:
+                raise HTTPException(status_code=404,detail="Invite code not found")
+            todolist_id = todolist[0]
+            cursor.execute("SELECT FROM ToDoListShare WHERE ToDoListID = %s AND UserID = %s;",(todolist_id,user_id))
+            existing = cursor.fetchone()
+            
+            if existing:    
+                return {"message":"User already in the list"}
+            
+            cursor.execute("""
+                INSERT INTO ToDoListShare (ToDoListID, UserID)
+                VALUES (%s, %s);
+            """, (todolist_id, user_id))
+            connection.commit()
+        connection.close()
+        
+        return {"message":"User successfully added to the list"}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail = str(e))
+            
     
     
 @app.get("/tasks/{todolist_id}")
@@ -224,41 +267,4 @@ def create_task(task: TaskCreate):
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
 
-    
-@app.get("/taskstest")
-def getTasksTest():
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * from taskTest")
-            tasks = cursor.fetchall()
-        connection.close()
-        return {"tasks":tasks}
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e))
-    
-    
-@app.post("/taskstest")
-def createTaskTest(description,completed):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("INSERT into taskTest (Description,Completed) VALUES(%s,%s);",(description,completed))
-            connection.commit()
-        connection.close()
-        return {"message": "Task created successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e))
 
-@app.put("/taskstest/{task_id}")
-def markAsCompleted(task_id):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("UPDATE taskTest SET Completed = 1 WHERE ID = %s;",(task_id,))
-            connection.commit()
-        
-        connection.close()
-        return {"message": f"Task {task_id} marked as completed"}
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e))
