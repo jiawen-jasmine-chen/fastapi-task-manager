@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import date
 
+import random
+import string
+
 app = FastAPI()
 
 app.add_middleware(
@@ -15,6 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def generate_invite_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 class TaskCreate(BaseModel):
     description: str
@@ -158,11 +164,24 @@ def get_todolists(user_id: int):
 def create_todolist(user_id,shared,name):
     try:
         connection = get_db_connection()
+        invite_code = None
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID,Name) VALUES(%s, %s,%s);",(shared,user_id,name))
+            
+            if shared == 1:
+                invite_code = generate_invite_code()
+            
+            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID,Name,InviteCode) VALUES(%s, %s,%s,%s);",(shared,user_id,name,invite_code))
             connection.commit()
+            todolist_id = cursor.lastrowid
         connection.close()
-        return {"message": "Todo list successfully created!","name":name}
+        
+        return {
+            "message": "Todo list successfully created!",
+            "todolist_id": todolist_id,
+            "name": name,
+            "shared": shared,
+            "inviteCode": invite_code
+        }
     except Exception as e:
         raise HTTPException(status_code=500,detail = str(e))   
     
