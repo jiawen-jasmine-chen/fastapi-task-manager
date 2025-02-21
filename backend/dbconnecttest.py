@@ -167,7 +167,9 @@ def create_todolist(user_id,shared,name):
         invite_code = None
         with connection.cursor() as cursor:
             
-            if shared == 1:
+            shared_flag = int(shared)
+            
+            if shared_flag == 1:
                 invite_code = generate_invite_code()
             
             cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID,Name,InviteCode) VALUES(%s, %s,%s,%s);",(shared,user_id,name,invite_code))
