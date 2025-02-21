@@ -48,39 +48,39 @@ export default function HomeScreen() {
       Alert.alert('List name cannot be empty!');
       return;
     }
-
+  
     if (!userId) {
       Alert.alert('User ID not found!');
       return;
     }
-
+  
     try {
-      const newList = await createTodoList(userId, isShared ? 1 : 0, newListName);
-
-    
-      console.log("newList", newList);
-
+      const sharedFlag = isShared ? 1 : 0;
+      const newList = await createTodoList(userId, sharedFlag, newListName);
+  
+      
+  
       setTodoLists((prev) => [...prev, { id: newList.id, name: newListName }]);
       setNewListName('');
       setIsShared(false);
-
-      Alert.alert('ToDoList Created', `List "${newListName}" has been created successfully!`);
-
-      if (isShared && newList.inviteCode){
-        Alert.alert(
-          'Invite Code',
-          `Share this code with others to join the list:\n\n${newList.inviteCode}`,
-          [{ text: 'OK' }]
-        );
+  
+      let message = `List "${newListName}" has been created successfully!`;
+  
+      if (sharedFlag === 1 && newList.inviteCode) {
+        message += `\n\n🎉 Share this invite code with others to join:\n${newList.inviteCode}`;
       }
-
+  
+      Alert.alert('ToDoList Created', message, [{ text: 'OK' }]);
+  
     } catch (error) {
       console.error('Error creating ToDoList:', error);
       Alert.alert('An error occurred while creating the ToDoList.');
     }
   };
+  
 
   const handleListPress = (listId: number, listName: string) => {
+
     router.push({
       pathname: '../ToDoListDetailScreen',
       params: { listId: listId.toString(), listName: listName }
