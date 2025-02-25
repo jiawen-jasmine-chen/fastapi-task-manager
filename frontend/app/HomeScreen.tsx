@@ -57,10 +57,14 @@ export default function HomeScreen() {
     try {
       const sharedFlag = isShared ? 1 : 0;
       const newList = await createTodoList(userId, sharedFlag, newListName);
-  
+      
+      if (!newList || !newList.todolist_id) {
+        throw new Error('Failed to retrieve new list ID.');
+      }
+      
       
   
-      setTodoLists((prev) => [...prev, { id: newList.id, name: newListName }]);
+      setTodoLists((prev) => [...prev, { id: newList.todolist_id, name: newListName }]);
       setNewListName('');
       setIsShared(false);
   
