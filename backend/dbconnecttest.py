@@ -248,29 +248,40 @@ def create_task(task: TaskCreate):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            
-            cursor.execute("""
+            print("🔍 Inserting Task:", task.dict())  # ✅ 打印调试信息
+
+            # 修正 SQL 语句，确保所有字段正确传递
+            sql = """
                 INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
                 VALUES (%s, %s, %s, %s, %s, %s);
-            """, (task.description, task.assignee, task.due_date, task.todolist_id, task.owner_id))
+            """
+            values = (
+                task.description,
+                task.progress if task.progress else "Uncompleted",  # ✅ 确保 progress 有默认值
+                task.assignee if task.assignee is not None else None,  # ✅ 允许 Assignee 为空
+                task.due_date if task.due_date else None,  # ✅ 允许 DueDate 为空
+                task.todolist_id,
+                task.owner_id
+            )
 
+            cursor.execute(sql, values)  # ✅ 修复 SQL 语句
             connection.commit()
             
             task_id = cursor.lastrowid
-            
             cursor.execute("""
                 SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID
                 FROM Task WHERE TaskID = %s
             """, (task_id,))
 
-            
             cols = [x[0] for x in cursor.description]
             new_task = cursor.fetchone()
+
         connection.close()
-        return {"message":"Task created successfully",
-                "task": dict(zip(cols,new_task))}
+        return {"message": "Task created successfully", "task": dict(zip(cols, new_task))}
+    
     except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e))
+        print("❌ Error inserting task:", str(e))  # ✅ 打印具体错误
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.put("/tasks/{task_id}")

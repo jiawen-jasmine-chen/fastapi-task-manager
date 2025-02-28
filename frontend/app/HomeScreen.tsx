@@ -10,16 +10,13 @@ import {
   SafeAreaView,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Checkbox } from 'expo-checkbox';
+import Checkbox from 'expo-checkbox';
 import { fetchTodoLists } from '../api/todoService';
-import { Task, fetchTasks, addTaskToServer } from '../api/taskService';
+import { Task, fetchTasks, addTaskToServer, updateTaskOnServer } from '../api/taskService'; // ✅ 确保引入 updateTaskOnServer
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
 import { useRouter } from 'expo-router';
-import { RootStackParamList } from '../types/types';
-
-
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -30,11 +27,9 @@ export default function HomeScreen() {
   const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
-  //const [bottomOffset] = useState(new Animated.Value(70));
   const bottomOffset = useRef(new Animated.Value(70)).current;
 
   const flatListRef = useRef<FlatList>(null);
-  
 
   // **获取用户的 ToDoLists**
   useEffect(() => {
@@ -96,12 +91,30 @@ export default function HomeScreen() {
   }, []);
 
   // **任务完成状态切换**
-  const toggleTaskCompletion = (id: number) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const toggleTaskCompletion = async (id: number) => {
+    // 找到当前任务
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    // 计算新的 progress 状态
+    const newProgress = task.progress === 'Completed' ? 'Uncompleted' : 'Completed';
+
+    try {
+      // ✅ 调用后端 API 更新任务状态
+      const updatedTask = await updateTaskOnServer(id, { progress: newProgress });
+
+      if (updatedTask) {
+        // ✅ 更新本地任务状态
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? { ...task, progress: newProgress, completed: newProgress === 'Completed' } : task
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating task progress:', error);
+      alert('Failed to update task status.');
+    }
   };
 
   // **添加任务**
@@ -125,19 +138,16 @@ export default function HomeScreen() {
       due_date: new Date().toISOString().split('T')[0],
       todolist_id: selectedTodoList,
       owner_id: userId,
+      progress: "Uncompleted", // ✅ 添加默认 progress 值
     };
+    
 
     console.log('Payload being sent:', newTaskPayload);
     try {
       const addedTask = await addTaskToServer(newTaskPayload);
       if (addedTask) {
-        // ✅ 方式 1：强制刷新任务列表（从后端重新获取）
         const updatedTasks = await fetchTasks(selectedTodoList);
-        setTasks(updatedTasks); // 这样确保 UI 立即更新
-  
-        // ✅ 方式 2：稍微延迟 `setTasks` 让 React 先完成 UI 渲染
-        // setTimeout(() => setTasks([...tasks, addedTask]), 100);
-  
+        setTasks(updatedTasks);
         setNewTask('');
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -152,25 +162,18 @@ export default function HomeScreen() {
   };
 
   const renderTask = ({ item }: { item: Task }) => {
-    const taskWithDefaults = {
-      ...item,
-      todolist_id: item.todolist_id ?? -1,
-      owner_id: item.owner_id ?? -1,
-      completed: item.completed ?? false
-    };
-  
     return (
       <TouchableOpacity
         style={homeStyles.taskRow}
         onPress={() => {
-          console.log('Navigating with task:', taskWithDefaults);
+          console.log('Navigating with task:', item);
           router.push({
             pathname: '/TaskDetailScreen',
-            params: { task: JSON.stringify(taskWithDefaults) },
+            params: { task: JSON.stringify(item) },
           });
         }}
       >
-        {/* ✅ 添加 Checkbox 和 Text 组件 */}
+        {/* ✅ 确保 Checkbox 调用后端更新任务 */}
         <Checkbox
           value={item.completed}
           onValueChange={() => toggleTaskCompletion(item.id)}
@@ -183,7 +186,6 @@ export default function HomeScreen() {
     );
   };
 
-
   return (
     <SafeAreaView style={homeStyles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -194,15 +196,6 @@ export default function HomeScreen() {
               <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
             </View>
           </View>
-
-          {/* <View style={homeStyles.listcontainer}>
-            <TouchableOpacity
-              onPress={() => router.push('/CalendarScreen')}
-              style={homeStyles.listButton}
-            >
-              <Text style={homeStyles.addButtonText}>View Tasklists</Text>
-            </TouchableOpacity>
-            </View> */}
 
           {/* 任务列表 */}
           {tasks.length === 0 ? (
