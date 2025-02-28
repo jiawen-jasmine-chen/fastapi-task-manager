@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,12 @@ import {
 } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { fetchTodoLists } from '../api/todoService';
-import { Task, fetchTasks, addTaskToServer, updateTaskOnServer } from '../api/taskService'; // ✅ 确保引入 updateTaskOnServer
+import { Task, fetchTasks, addTaskToServer, updateTaskOnServer } from '../api/taskService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native'; // ✅ 导入 useFocusEffect
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -38,7 +39,6 @@ export default function HomeScreen() {
         try {
           const lists = await fetchTodoLists(userId);
           console.log('Fetched TodoLists:', lists);
-
           setTodoLists(lists);
           if (lists.length > 0) {
             setSelectedTodoList(lists[0].id);
@@ -52,21 +52,23 @@ export default function HomeScreen() {
     }
   }, [userId]);
 
-  // **获取选定 ToDoList 的任务**
-  useEffect(() => {
-    if (selectedTodoList) {
-      const loadTasks = async () => {
-        try {
-          const fetchedTasks = await fetchTasks(selectedTodoList);
-          console.log('Fetched tasks from backend:', fetchedTasks);
-          setTasks(fetchedTasks);
-        } catch (error) {
-          console.error('Error fetching tasks:', error);
-        }
-      };
-      loadTasks();
-    }
-  }, [selectedTodoList]);
+  // ✅ **监听页面焦点变化，确保返回主页时刷新任务**
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedTodoList) {
+        const loadTasks = async () => {
+          try {
+            const fetchedTasks = await fetchTasks(selectedTodoList);
+            console.log('🔄 Tasks updated after returning:', fetchedTasks);
+            setTasks(fetchedTasks);
+          } catch (error) {
+            console.error('Error fetching tasks:', error);
+          }
+        };
+        loadTasks();
+      }
+    }, [selectedTodoList])
+  );
 
   // **键盘弹起时调整输入框位置**
   useEffect(() => {
@@ -92,19 +94,14 @@ export default function HomeScreen() {
 
   // **任务完成状态切换**
   const toggleTaskCompletion = async (id: number) => {
-    // 找到当前任务
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
 
-    // 计算新的 progress 状态
     const newProgress = task.progress === 'Completed' ? 'Uncompleted' : 'Completed';
 
     try {
-      // ✅ 调用后端 API 更新任务状态
       const updatedTask = await updateTaskOnServer(id, { progress: newProgress });
-
       if (updatedTask) {
-        // ✅ 更新本地任务状态
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
             task.id === id ? { ...task, progress: newProgress, completed: newProgress === 'Completed' } : task
@@ -138,9 +135,8 @@ export default function HomeScreen() {
       due_date: new Date().toISOString().split('T')[0],
       todolist_id: selectedTodoList,
       owner_id: userId,
-      progress: "Uncompleted", // ✅ 添加默认 progress 值
+      progress: "Uncompleted",
     };
-    
 
     console.log('Payload being sent:', newTaskPayload);
     try {
@@ -173,7 +169,6 @@ export default function HomeScreen() {
           });
         }}
       >
-        {/* ✅ 确保 Checkbox 调用后端更新任务 */}
         <Checkbox
           value={item.completed}
           onValueChange={() => toggleTaskCompletion(item.id)}
