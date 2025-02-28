@@ -56,10 +56,16 @@ def get_users():
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * from User;")
+            cursor.execute("SELECT UserID, Username FROM User;")  
             users = cursor.fetchall()
+
         connection.close()
-        return {"users":users}
+
+       
+        formatted_users = [{"UserID": u[0], "Username": u[1]} for u in users]
+
+        return {"users": formatted_users} 
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
