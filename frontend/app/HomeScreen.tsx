@@ -6,18 +6,21 @@ import {
   FlatList,
   TouchableOpacity,
   Keyboard,
-  Animated,
   SafeAreaView,
   TouchableWithoutFeedback,
+  Alert,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import Checkbox from 'expo-checkbox';
-import { fetchTodoLists } from '../api/todoService';
+import { fetchTodoLists, createTodoList } from '../api/todoService';
 import { Task, fetchTasks, addTaskToServer, updateTaskOnServer } from '../api/taskService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
+import newstyles from '../styles/newstyles';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native'; // ✅ 导入 useFocusEffect
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,11 +31,12 @@ export default function HomeScreen() {
   const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
-  const bottomOffset = useRef(new Animated.Value(70)).current;
+  const [newListName, setNewListName] = useState('');
+  const [isShared, setIsShared] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
 
-  // **获取用户的 ToDoLists**
+  // **Fetch user ToDoLists**
   useEffect(() => {
     if (userId) {
       const loadTodoLists = async () => {
@@ -42,7 +46,6 @@ export default function HomeScreen() {
           setTodoLists(lists);
           if (lists.length > 0) {
             setSelectedTodoList(lists[0].id);
-            console.log('Selected ToDoList:', lists[0].id);
           }
         } catch (error) {
           console.error('Error fetching ToDo lists:', error);
@@ -52,7 +55,7 @@ export default function HomeScreen() {
     }
   }, [userId]);
 
-  // ✅ **监听页面焦点变化，确保返回主页时刷新任务**
+  // ✅ Refresh tasks when returning to Home
   useFocusEffect(
     useCallback(() => {
       if (selectedTodoList) {
@@ -70,29 +73,7 @@ export default function HomeScreen() {
     }, [selectedTodoList])
   );
 
-  // **键盘弹起时调整输入框位置**
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
-      Animated.timing(bottomOffset, {
-        toValue: e.endCoordinates.height - 20,
-        duration: 30,
-        useNativeDriver: false,
-      }).start();
-    });
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
-      Animated.timing(bottomOffset, {
-        toValue: 70,
-        duration: 150,
-        useNativeDriver: false,
-      }).start();
-    });
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
-
-  // **任务完成状态切换**
+  // **Task Completion Toggle**
   const toggleTaskCompletion = async (id: number) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -114,14 +95,10 @@ export default function HomeScreen() {
     }
   };
 
-  // **添加任务**
+  // **Add New Task**
   const addTask = async () => {
     if (newTask.trim().length === 0) {
       alert('Task cannot be empty!');
-      return;
-    }
-    if (newTask.length > 50) {
-      alert('Task text is too long. Keep it under 50 characters.');
       return;
     }
     if (!selectedTodoList || !userId) {
@@ -157,78 +134,89 @@ export default function HomeScreen() {
     }
   };
 
-  const renderTask = ({ item }: { item: Task }) => {
-    return (
-      <TouchableOpacity
-        style={homeStyles.taskRow}
-        onPress={() => {
-          console.log('Navigating with task:', item);
-          router.push({
-            pathname: '/TaskDetailScreen',
-            params: { task: JSON.stringify(item) },
-          });
-        }}
-      >
-        <Checkbox
-          value={item.completed}
-          onValueChange={() => toggleTaskCompletion(item.id)}
-          style={homeStyles.checkbox}
-        />
-        <Text style={[homeStyles.taskText, item.completed && homeStyles.completedTask]}>
-          {item.description}
-        </Text>
-      </TouchableOpacity>
-    );
+  // **Create a New ToDoList**
+  const handleCreateTodoList = async () => {
+    if (newListName.trim() === '') {
+      Alert.alert('List name cannot be empty!');
+      return;
+    }
+    if (!userId) {
+      Alert.alert('User ID not found!');
+      return;
+    }
+
+    try {
+      const sharedFlag = isShared ? 1 : 0;
+      const newList = await createTodoList(userId, sharedFlag, newListName);
+      
+      if (!newList || !newList.todolist_id) {
+        throw new Error('Failed to retrieve new list ID.');
+      }
+
+      setTodoLists((prev) => [...prev, { id: newList.todolist_id, name: newListName }]);
+      setNewListName('');
+      setIsShared(false);
+
+      let message = `List "${newListName}" has been created successfully!`;
+
+      if (sharedFlag === 1 && newList.inviteCode) {
+        message += `\n\n🎉 Share this invite code with others to join:\n${newList.inviteCode}`;
+      }
+  
+      Alert.alert('ToDoList Created', message, [{ text: 'OK' }]);
+    } catch (error) {
+      console.error('Error creating ToDoList:', error);
+      Alert.alert('An error occurred while creating the ToDoList.');
+    }
   };
 
   return (
     <SafeAreaView style={homeStyles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={homeStyles.innerContainer}>
-          {/* 标题 */}
-          <View style={homeStyles.header}>
-            <View style={homeStyles.titleContainer}>
-              <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
-            </View>
-          </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={homeStyles.innerContainer}>
+            {/* Header */}
+            <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
 
-          {/* 任务列表 */}
-          {tasks.length === 0 ? (
-            <View style={homeStyles.emptyState}>
-              <Text style={homeStyles.emptyStateText}>No tasks found! 🎉</Text>
-              <Text style={homeStyles.emptySubText}>Try adding a new task below.</Text>
-            </View>
-          ) : (
+            {/* ToDoList Display */}
             <FlatList
-              ref={flatListRef}
-              data={tasks}
-              keyExtractor={(item, index) => (item.id ? item.id.toString() : `temp-${index}`)}
-              renderItem={renderTask}
-              initialNumToRender={10}
-              removeClippedSubviews={true}
-              contentContainerStyle={homeStyles.taskList}
-              showsVerticalScrollIndicator={false}
+              data={todoLists}
+              keyExtractor={(item, index) => `${item?.id ?? 'key'}-${index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={newstyles.listButton}
+                  onPress={() => setSelectedTodoList(item.id)}
+                >
+                  <Text style={newstyles.listButtonText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={newstyles.emptyStateText}>No ToDoLists yet. Create one!</Text>}
             />
-          )}
 
-          {/* 输入框 */}
-          <Animated.View style={[homeStyles.inputWrapper, { bottom: bottomOffset }]}>
-            <View style={homeStyles.whiteBackgroundBar} />
-            <View style={homeStyles.inputContainer}>
+            {/* ToDoList Creation */}
+            <View style={newstyles.createListContainerBottom}>
               <TextInput
-                style={homeStyles.input}
-                placeholder="Write a task..."
-                value={newTask}
-                onChangeText={setNewTask}
-                onSubmitEditing={addTask}
+                style={newstyles.input}
+                placeholder="Enter ToDoList Name"
+                value={newListName}
+                onChangeText={setNewListName}
               />
-              <TouchableOpacity style={homeStyles.addButton} onPress={addTask}>
-                <Text style={homeStyles.addButtonText}>+</Text>
+
+              <View style={newstyles.checkboxContainer}>
+                <Checkbox value={isShared} onValueChange={setIsShared} style={newstyles.checkbox} />
+                <Text style={newstyles.checkboxLabel}>Shared List</Text>
+              </View>
+
+              <TouchableOpacity style={newstyles.createButton} onPress={handleCreateTodoList}>
+                <Text style={newstyles.createButtonText}>Create ToDoList</Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

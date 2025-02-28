@@ -49,8 +49,14 @@ function AppTabs() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}> {/* ✅ 这里才是 Redux 初始化 */}
-        <AppTabs />
+      <PersistGate loading={null} persistor={persistor}>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="ToDoListDetailScreen" options={{ title: 'ToDo List Details' }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );

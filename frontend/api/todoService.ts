@@ -6,10 +6,15 @@ const API_BASE_URL = 'http://backend.155.4.244.194.nip.io';
 export const fetchTodoLists = async (userId: number) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/todolists/${userId}`);
-    return response.data.todolists;
-  } catch (error) {
-    console.error('Error fetching ToDo lists:', error);
-    return [];
+    return response.data.todolists || [];
+  } catch (error:any) {
+    if(error.response.status === 404) {
+      return [];
+    }
+    else{
+      console.error('Error fetching ToDo lists:', error);
+      return [];
+    }
   }
 };
 
@@ -22,5 +27,22 @@ export const fetchTasks = async (todolistId: number) => {
     } catch (error) {
       console.error('Error fetching tasks:', error);
       return [];
+    }
+  };
+
+  export const createTodoList = async (userId: number, shared: number, name: string) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/todolists`, null, {
+        params: {
+          user_id: userId,
+          shared: shared,
+          name: name,
+        },
+      });
+  
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating ToDoList:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to create ToDoList');
     }
   };

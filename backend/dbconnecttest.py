@@ -9,13 +9,6 @@ import random
 import string
 from datetime import date
 
-
-
-
-def generate_invite_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-
-
 app = FastAPI()
 
 app.add_middleware(
@@ -26,6 +19,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def generate_invite_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 class TaskCreate(BaseModel):
     description: str
@@ -50,37 +45,20 @@ def get_db_connection():
         database = 'tododb',
         port=3306
     )
-
+        
+        
+# ✅ Get Users
 @app.get("/users")
 def get_users():
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT UserID, Username FROM User;")  
+            cursor.execute("SELECT UserID, Username FROM User;")
             users = cursor.fetchall()
-
         connection.close()
-
-       
-        formatted_users = [{"UserID": u[0], "Username": u[1]} for u in users]
-
-        return {"users": formatted_users} 
-    
+        return {"users": [{"UserID": u[0], "Username": u[1]} for u in users]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @app.post("/users")
-# def create_user(username: str):
-#     try:
-#         connection = get_db_connection()
-#         with connection.cursor() as cursor:
-#             cursor.execute("INSERT INTO User (Username) VALUES (%s);",(username,))
-#             connection.commit()
-#         connection.close()
-#         return {"message": "User created successfully","username":username}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/register")
@@ -130,22 +108,6 @@ def login_user(username: str):
 
 
 
-@app.get("/users/{user_id}")
-def check_user(user_id: int):
-    try:
-        connection = get_db_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM User WHERE UserID = %s;", (user_id,))
-            existing_user = cursor.fetchone()
-        connection.close()
-
-        if existing_user:
-            return {"exists": True, "user": existing_user, "message": "User exists"}
-        else:
-            return {"exists": False, "message": "User not found"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 
 
@@ -154,142 +116,122 @@ def get_todolists(user_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT ToDoListID, SharedFlag, UserID FROM ToDoList WHERE UserID = %s;", (user_id,))
+            cursor.execute("""
+                SELECT ToDoList.ToDoListID, ToDoList.Name, ToDoList.SharedFlag, ToDoList.UserID, ToDoList.InviteCode 
+                FROM ToDoList 
+                LEFT JOIN ToDoListShare ON ToDoList.ToDoListID = ToDoListShare.ToDoListID 
+                WHERE ToDoList.UserID = %s OR ToDoListShare.UserID = %s;
+            """, (user_id, user_id))
             lists = cursor.fetchall()
-
         connection.close()
-
-       
-        if not lists:
-            raise HTTPException(status_code=404, detail=f"No ToDoLists found for user_id {user_id}")
-
-        
-        formatted_lists = [{"id": l[0], "shared": l[1], "userId": l[2]} for l in lists]
-
-        return {"todolists": formatted_lists}
-
-    except HTTPException as e:
-        raise e  
+        return {"todolists": [{"id": l[0], "name": l[1], "shared": l[2], "userId": l[3], "inviteCode": l[4]} for l in lists]}
     except Exception as e:
-        
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
     
+# ✅ Create a ToDoList
 @app.post("/todolists")
-def create_todolist(user_id,shared):
+def create_todolist(user_id: int, shared: int, name: str):
     try:
         connection = get_db_connection()
-        invite_code = generate_invite_code() if shared else None
-        
+        invite_code = generate_invite_code() if shared == 1 else None
+
         with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID, InviteCode) VALUES(%s, %s, %s);",(shared,user_id,invite_code))
+            cursor.execute("INSERT INTO ToDoList (SharedFlag, UserID, Name, InviteCode) VALUES (%s, %s, %s, %s);",
+                           (shared, user_id, name, invite_code))
             connection.commit()
-            
             todolist_id = cursor.lastrowid
         connection.close()
-        return {"message": "Todo list successfully created!","todolist_id":todolist_id,"invite_code":invite_code}
+
+        return {
+            "message": "Todo list successfully created!",
+            "todolist_id": todolist_id,
+            "name": name,
+            "shared": shared,
+            "inviteCode": invite_code
+        }
     except Exception as e:
-        raise HTTPException(status_code=500,detail = str(e))   
+        raise HTTPException(status_code=500, detail=str(e))
+
     
+# ✅ Join a Shared ToDoList
 @app.post("/todolists/join")
-def join_todolist(user_id:int,invite_code:str):
+def join_todolist(user_id: int, invite_code: str):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT ToDoListID FROM ToDoList WHERE InviteCode = %s;",(invite_code,))
+            cursor.execute("SELECT ToDoListID FROM ToDoList WHERE InviteCode = %s;", (invite_code,))
             todolist = cursor.fetchone()
             if not todolist:
-                raise HTTPException(status_code=404,detail="Invite code not found")
+                raise HTTPException(status_code=404, detail="Invite code not found")
             todolist_id = todolist[0]
-            cursor.execute("SELECT * FROM ToDoListShare WHERE ToDoListID = %s AND UserID = %s;",(todolist_id,user_id))
+
+            cursor.execute("SELECT * FROM ToDoListShare WHERE ToDoListID = %s AND UserID = %s;", (todolist_id, user_id))
             existing = cursor.fetchone()
-            
-            if existing:    
-                return {"message":"User already in the list"}
-            
-            cursor.execute("""
-                INSERT INTO ToDoListShare (ToDoListID, UserID)
-                VALUES (%s, %s);
-            """, (todolist_id, user_id))
+            if existing:
+                return {"message": "User already in the list"}
+
+            cursor.execute("INSERT INTO ToDoListShare (ToDoListID, UserID) VALUES (%s, %s);", (todolist_id, user_id))
             connection.commit()
         connection.close()
-        
-        return {"message":"User successfully added to the list"}
+        return {"message": "User successfully added to the list"}
     except Exception as e:
-        raise HTTPException(status_code=500,detail = str(e))
-            
+        raise HTTPException(status_code=500, detail=str(e))
     
     
+# ✅ 获取任务（返回 Assignee 的用户名）
 @app.get("/tasks/{todolist_id}")
 def get_tasks(todolist_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID FROM Task WHERE ToDoListID = %s;", (todolist_id,))
+            cursor.execute("""
+                SELECT Task.TaskID, Task.Description, Task.Progress, User.Username AS AssigneeName, Task.DateDue, Task.DateCreated, Task.ToDoListID, Task.OwnerID 
+                FROM Task 
+                LEFT JOIN User ON Task.Assignee = User.UserID 
+                WHERE Task.ToDoListID = %s;
+            """, (todolist_id,))
             tasks = cursor.fetchall()
-        
         connection.close()
-
-      
-        formatted_tasks = [
-            {
-                "id": t[0],
-                "description": t[1],
-                "progress": t[2],
-                "assignee": t[3],
-                "due_date": t[4],
-                "created_at": t[5],
-                "todolist_id": t[6],
-                "owner_id": t[7],
-            }
-            for t in tasks
-        ]
-
-        return {"tasks": formatted_tasks}
+        return {"tasks": [{"id": t[0], "description": t[1], "progress": t[2], "assignee": t[3], "due_date": t[4], "created_at": t[5], "todolist_id": t[6], "owner_id": t[7]} for t in tasks]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     
+# ✅ Create a Task
 @app.post("/tasks")
 def create_task(task: TaskCreate):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            print("🔍 Inserting Task:", task.dict())  # ✅ 打印调试信息
-
-            # 修正 SQL 语句，确保所有字段正确传递
             sql = """
                 INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
                 VALUES (%s, %s, %s, %s, %s, %s);
             """
             values = (
                 task.description,
-                task.progress if task.progress else "Uncompleted",  # ✅ 确保 progress 有默认值
-                task.assignee if task.assignee is not None else None,  # ✅ 允许 Assignee 为空
-                task.due_date if task.due_date else None,  # ✅ 允许 DueDate 为空
+                task.progress if task.progress else "Uncompleted",
+                task.assignee if task.assignee is not None else None,
+                task.due_date if task.due_date else None,
                 task.todolist_id,
                 task.owner_id
             )
 
-            cursor.execute(sql, values)  # ✅ 修复 SQL 语句
+            cursor.execute(sql, values)
             connection.commit()
-            
+
             task_id = cursor.lastrowid
             cursor.execute("""
                 SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID
                 FROM Task WHERE TaskID = %s
             """, (task_id,))
-
-            cols = [x[0] for x in cursor.description]
             new_task = cursor.fetchone()
 
         connection.close()
-        return {"message": "Task created successfully", "task": dict(zip(cols, new_task))}
-    
+        return {"message": "Task created successfully", "task": dict(zip(["id", "description", "progress", "assignee", "due_date", "created_at", "todolist_id", "owner_id"], new_task))}
     except Exception as e:
-        print("❌ Error inserting task:", str(e))  # ✅ 打印具体错误
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, task_update: TaskUpdate):
