@@ -34,7 +34,13 @@ class TaskCreate(BaseModel):
     todolist_id: int
     owner_id: int
 
-
+class TaskUpdate(BaseModel):
+    description: str | None = None
+    assignee: int | None = None
+    due_date: date | None = None
+    progress: str | None = None 
+    
+    
 def get_db_connection():
     return pymysql.connect(
         host = 'mysql',
@@ -75,28 +81,25 @@ def register_user(username: str):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # 检查用户名是否存在
             cursor.execute("SELECT UserID FROM User WHERE Username = %s;", (username,))
             existing_user = cursor.fetchone()
 
             if existing_user:
                 return {"success": False, "message": "Username already exists"}
 
-            # 插入新用户
             cursor.execute("INSERT INTO User (Username) VALUES (%s);", (username,))
             connection.commit()
 
-            # 获取新用户 ID
             user_id = cursor.lastrowid
 
         return {"success": True, "user_id": user_id, "message": "Registration successful"}
     
     except Exception as e:
-        connection.rollback()  # 遇到错误时回滚，避免脏数据
+        connection.rollback()  
         raise HTTPException(status_code=500, detail=f"Error during registration: {str(e)}")
 
     finally:
-        connection.close()  # 确保连接总是被关闭
+        connection.close()  
 
 
 @app.post("/login")
@@ -116,7 +119,7 @@ def login_user(username: str):
         raise HTTPException(status_code=500, detail=f"Error during login: {str(e)}")
 
     finally:
-        connection.close()  # 确保数据库连接关闭
+        connection.close()  
 
 
 
@@ -149,19 +152,19 @@ def get_todolists(user_id: int):
 
         connection.close()
 
-        # ✅ 如果 `lists` 为空，返回 404，而不是返回空列表
+       
         if not lists:
             raise HTTPException(status_code=404, detail=f"No ToDoLists found for user_id {user_id}")
 
-        # ✅ 转换数据结构
+        
         formatted_lists = [{"id": l[0], "shared": l[1], "userId": l[2]} for l in lists]
 
         return {"todolists": formatted_lists}
 
     except HTTPException as e:
-        raise e  # 直接抛出 FastAPI 的 HTTPException，保持原有错误代码
+        raise e  
     except Exception as e:
-        # ✅ 捕获所有其他错误，并返回 500
+        
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     
@@ -191,7 +194,7 @@ def join_todolist(user_id:int,invite_code:str):
             if not todolist:
                 raise HTTPException(status_code=404,detail="Invite code not found")
             todolist_id = todolist[0]
-            cursor.execute("SELECT FROM ToDoListShare WHERE ToDoListID = %s AND UserID = %s;",(todolist_id,user_id))
+            cursor.execute("SELECT * FROM ToDoListShare WHERE ToDoListID = %s AND UserID = %s;",(todolist_id,user_id))
             existing = cursor.fetchone()
             
             if existing:    
@@ -220,7 +223,7 @@ def get_tasks(todolist_id: int):
         
         connection.close()
 
-        # ✅ 转换为 JSON 格式
+      
         formatted_tasks = [
             {
                 "id": t[0],
@@ -245,11 +248,12 @@ def create_task(task: TaskCreate):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
+            
             cursor.execute("""
                 INSERT INTO Task (Description, Progress, Assignee, DateDue, ToDoListID, OwnerID)
-                VALUES (%s, 'Not Started', %s, %s, %s, %s);
+                VALUES (%s, %s, %s, %s, %s, %s);
             """, (task.description, task.assignee, task.due_date, task.todolist_id, task.owner_id))
-            
+
             connection.commit()
             
             task_id = cursor.lastrowid
@@ -258,6 +262,7 @@ def create_task(task: TaskCreate):
                 SELECT TaskID, Description, Progress, Assignee, DateDue, DateCreated, ToDoListID, OwnerID
                 FROM Task WHERE TaskID = %s
             """, (task_id,))
+
             
             cols = [x[0] for x in cursor.description]
             new_task = cursor.fetchone()
@@ -268,3 +273,47 @@ def create_task(task: TaskCreate):
         raise HTTPException(status_code=500,detail=str(e))
 
 
+@app.put("/tasks/{task_id}")
+def update_task(task_id: int, task_update: TaskUpdate):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Task WHERE TaskID = %s;", (task_id,))
+            existing_task = cursor.fetchone()
+            if not existing_task:
+                raise HTTPException(status_code=404, detail="Task not found")
+
+            update_fields = []
+            update_values = []
+
+            if task_update.description is not None:
+                update_fields.append("Description = %s")
+                update_values.append(task_update.description)
+            if task_update.assignee is not None:
+                update_fields.append("Assignee = %s")
+                update_values.append(task_update.assignee)
+            if task_update.due_date is not None:
+                update_fields.append("DateDue = %s")
+                update_values.append(task_update.due_date)
+            if task_update.progress is not None:
+                if task_update.progress not in ["Uncompleted", "Completed"]:
+                    raise HTTPException(status_code=400, detail="Invalid progress value")
+                update_fields.append("Progress = %s")
+                update_values.append(task_update.progress)
+
+            if not update_fields:
+                raise HTTPException(status_code=400, detail="No fields to update")
+
+            update_values.append(task_id)
+            sql_query = f"UPDATE Task SET {', '.join(update_fields)} WHERE TaskID = %s;"
+            cursor.execute(sql_query, tuple(update_values))
+            connection.commit()
+
+            cursor.execute("SELECT TaskID, Description, COALESCE(Assignee, 0), COALESCE(DateDue, '0000-00-00'), COALESCE(Progress, 'Uncompleted') FROM Task WHERE TaskID = %s;", (task_id,))
+            updated_task = cursor.fetchone()
+
+        connection.close()
+        return {"message": "Task updated successfully", "task": updated_task}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
