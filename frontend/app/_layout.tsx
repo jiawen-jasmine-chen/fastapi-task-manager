@@ -2,16 +2,16 @@ import { Provider, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/store/store"; // ✅ 确保路径正确
 import { useColorScheme } from "react-native";
-import { Tabs } from "expo-router";
+import { Tabs, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import LoginScreen from "./LoginScreen"; // ✅ 引入登录页
 import { RootState } from "@/store/store";
 
 function AppTabs() {
-  const userId = useSelector((state: RootState) => state.user.userId); // ✅ 现在 Redux 已初始化
+  const userId = useSelector((state: RootState) => state.user?.userId) as number | null; // ✅ 确保 userId 正确
 
   if (!userId) {
-    return <LoginScreen />; // 未登录时显示登录页
+    return <LoginScreen />; // ✅ 如果未登录，显示登录界面
   }
 
   return (
@@ -30,11 +30,11 @@ function AppTabs() {
         tabBarInactiveTintColor: "gray",
       })}
     >
-      {/* ✅ 只显示 Home 和 Calendar */}
+      {/* ✅ 只在底部导航栏显示 Home 和 Calendar */}
       <Tabs.Screen name="HomeScreen" options={{ title: "Home" }} />
       <Tabs.Screen name="CalendarScreen" options={{ title: "Calendar" }} />
 
-      {/* ❌ 隐藏不需要在底部导航显示的页面 */}
+      {/* ❌ 隐藏非底部导航的页面 */}
       <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
       <Tabs.Screen name="LoginScreen" options={{ href: null }} />
       <Tabs.Screen name="RegisterScreen" options={{ href: null }} />
@@ -47,16 +47,16 @@ function AppTabs() {
 }
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme(); // ✅ 自动检测深色/浅色模式
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="ToDoListDetailScreen" options={{ title: 'ToDo List Details' }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </ThemeProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="ToDoListDetailScreen" options={{ title: "To-Do List Details" }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
       </PersistGate>
     </Provider>
   );

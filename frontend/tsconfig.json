@@ -13,5 +13,11 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "globals.d.ts",   
+    "node_modules", 
+    "babel.config.js",
+    "metro.config.js"
   ]
 }
