@@ -124,6 +124,9 @@ const homeStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  //calendar
+  selectedDateText: 
+  { fontSize: 18, fontWeight: "bold", marginVertical: 10 },
 });
 
 export default homeStyles;

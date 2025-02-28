@@ -6,14 +6,15 @@ import { RootStackParamList } from '../types/types';
 export default function SplashScreen() {
   const router = useRouter();
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      // 跳转到注册页（路径必须与文件名一致）
-      router.replace('/RegisterScreen');
-    }, 3000);
+  // useEffect(() => {
+  //   const timeout = setTimeout(() => {
+  //     // 跳转到注册页（路径必须与文件名一致）
+  //     router.replace('/RegisterScreen');
+  //     // router.replace('/CalendarScreen');
+  //   }, 3000);
 
-    return () => clearTimeout(timeout);
-  }, []);
+  //   return () => clearTimeout(timeout);
+  // }, []);
 
   return (
     <View style={styles.container}>
