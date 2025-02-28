@@ -33,6 +33,7 @@ class TaskCreate(BaseModel):
     due_date: date | None = None
     todolist_id: int
     owner_id: int
+    progress: str = "Uncompleted"
 
 class TaskUpdate(BaseModel):
     description: str | None = None
