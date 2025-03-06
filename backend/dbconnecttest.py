@@ -47,7 +47,6 @@ def get_db_connection():
     )
         
         
-# ✅ Get Users
 @app.get("/users")
 def get_users():
     try:
@@ -116,21 +115,35 @@ def get_todolists(user_id: int):
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
+            
+            cursor.execute("""
+                SELECT ToDoListID, Name, SharedFlag, UserID, InviteCode 
+                FROM ToDoList 
+                WHERE UserID = %s;
+            """, (user_id,))
+            owned_lists = cursor.fetchall()
+            
             cursor.execute("""
                 SELECT ToDoList.ToDoListID, ToDoList.Name, ToDoList.SharedFlag, ToDoList.UserID, ToDoList.InviteCode 
                 FROM ToDoList 
-                LEFT JOIN ToDoListShare ON ToDoList.ToDoListID = ToDoListShare.ToDoListID 
-                WHERE ToDoList.UserID = %s OR ToDoListShare.UserID = %s;
+                JOIN ToDoListShare ON ToDoList.ToDoListID = ToDoListShare.ToDoListID 
+                WHERE ToDoListShare.UserID = %s AND ToDoList.UserID != %s;
             """, (user_id, user_id))
-            lists = cursor.fetchall()
+            shared_lists = cursor.fetchall()
+            
         connection.close()
-        return {"todolists": [{"id": l[0], "name": l[1], "shared": l[2], "userId": l[3], "inviteCode": l[4]} for l in lists]}
+        
+        todolists = [
+            {"id": l[0], "name": l[1], "shared": bool(l[2]), "owner_id": l[3], "inviteCode": l[4]}
+            for l in owned_lists + shared_lists
+        ]
+        
+        return {"todolists": todolists}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
     
-# ✅ Create a ToDoList
 @app.post("/todolists")
 def create_todolist(user_id: int, shared: int, name: str):
     try:
@@ -155,7 +168,6 @@ def create_todolist(user_id: int, shared: int, name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
     
-# ✅ Join a Shared ToDoList
 @app.post("/todolists/join")
 def join_todolist(user_id: int, invite_code: str):
     try:
@@ -180,7 +192,6 @@ def join_todolist(user_id: int, invite_code: str):
         raise HTTPException(status_code=500, detail=str(e))
     
     
-# ✅ 获取任务（返回 Assignee 的用户名）
 @app.get("/tasks/{todolist_id}")
 def get_tasks(todolist_id: int):
     try:
@@ -199,7 +210,6 @@ def get_tasks(todolist_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
     
-# ✅ Create a Task
 @app.post("/tasks")
 def create_task(task: TaskCreate):
     try:
