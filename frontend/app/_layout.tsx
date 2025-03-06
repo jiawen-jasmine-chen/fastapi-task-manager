@@ -35,6 +35,7 @@ function AppTabs() {
       <Tabs.Screen name="CalendarScreen" options={{ title: "Calendar" }} />
 
       {/* ❌ 隐藏非底部导航的页面 */}
+      <Tabs.Screen name="ToDoListDetailScreen" options={{ href: null }} />
       <Tabs.Screen name="TaskDetailScreen" options={{ href: null }} />
       <Tabs.Screen name="LoginScreen" options={{ href: null }} />
       <Tabs.Screen name="RegisterScreen" options={{ href: null }} />
@@ -51,12 +52,8 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="ToDoListDetailScreen" options={{ title: "To-Do List Details" }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+      <PersistGate loading={null} persistor={persistor}> {/* ✅ 这里才是 Redux 初始化 */}
+        <AppTabs />
       </PersistGate>
     </Provider>
   );
