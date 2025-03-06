@@ -25,25 +25,33 @@ export default function ListScreen() {
   const [tasksByList, setTasksByList] = useState<{ [key: number]: Task[] }>({});
 
 // 修改 useEffect 部分
-  useEffect(() => {
-    if (userId) {
-      const loadTodoLists = async () => {
-        try {
-          const lists = await fetchTodoLists(userId);
-          console.log('Fetched TodoLists:', lists);
+useEffect(() => {
+  if (userId) {
+    const loadTodoLists = async () => {
+      try {
+        const lists = await fetchTodoLists(userId);
+        console.log('Fetched TodoLists:', lists);
 
-          setTodoLists(lists);
-          if (lists.length > 0) {
-            setSelectedTodoList(lists[0].id);
-            console.log('Selected ToDoList:', lists[0].id);
-          }
-        } catch (error) {
-          console.error('Error fetching ToDo lists:', error);
+        setTodoLists(lists);
+
+        if (lists.length > 0) {
+          setSelectedTodoList(lists[0].id);
+          console.log('Selected ToDoList:', lists[0].id);
+
+          // ✅ 确保任务被正确加载
+          lists.forEach((list : any)=> {
+            loadTasksForList(list.id);
+          });
         }
-      };
-      loadTodoLists();
-    }
-  }, [userId]);
+      } catch (error) {
+        console.error('Error fetching ToDo lists:', error);
+      }
+    };
+    
+    loadTodoLists();
+  }
+}, [userId]);
+
 
   // 获取单个列表的任务
   const loadTasksForList = async (listId: number) => {
@@ -102,7 +110,7 @@ export default function ListScreen() {
         renderItem={renderTask}
         contentContainerStyle={homeStyles.taskList}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No Lists</Text>
+          <Text style={styles.emptyText}>No ToDos</Text>
         }
       />
     </View>
