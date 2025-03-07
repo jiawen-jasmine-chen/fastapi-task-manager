@@ -47,12 +47,21 @@ const listStyles = StyleSheet.create({
       alignItems: "center",
       paddingBottom: 5, // 确保列表与标题有间距
     },
-    // listTitle: {
-    //   fontSize: 18,
-    //   fontWeight: "bold",
-    //   color: "black",
-    //   flexShrink: 1, // 避免过长标题挤压按钮
-    // },
+    joinContainer: {
+      padding: 20,
+    },
+    joinLabel: {
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    joinInput: {
+      height: 40,
+      borderColor: '#ccc',
+      borderWidth: 1,
+      borderRadius: 5,
+      paddingHorizontal: 10,
+      marginBottom: 20,
+    },
   });
 
   export default listStyles;

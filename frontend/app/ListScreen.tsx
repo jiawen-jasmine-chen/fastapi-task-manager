@@ -10,11 +10,12 @@ import {
   TouchableWithoutFeedback,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Button
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Checkbox } from 'expo-checkbox';
-import { fetchTodoLists, createTodoList } from '../api/todoService';
+import { fetchTodoLists, createTodoList, joinTodoList } from '../api/todoService';
 import homeStyles from '../styles/homeStyles';
 import listStyles from '../styles/listStyles';
 import { useSelector } from 'react-redux';
@@ -38,6 +39,7 @@ export default function ListScreen() {
   const [newListName, setNewListName] = useState('');
   const [isShared, setIsShared] = useState(false);
   const [expandedLists, setExpandedLists] = useState<{ [key: number]: boolean }>({});
+  const [inviteCode, setInviteCode] = useState("");
 
 
 // 修改 useEffect 部分
@@ -185,11 +187,35 @@ useEffect(() => {
         [listId]: !prev[listId] // 切换展开/收起状态
       }));
     };
+
+    //加入share list
+    const handleSubmit = async () => {
+      try {
+        await joinTodoList(userId, inviteCode);
+        Alert.alert("成功", "已加入共享列表");
+        // 可以导航到列表页面或刷新列表
+      } catch (error) {
+        // 错误已经在 service 中处理，这里可选是否要额外处理
+      }
+    };
     
   
   return (
     <SafeAreaView style={homeStyles.container}>
-      <View style={homeStyles.innerContainer}>
+      <View>
+
+        {/* join a list */}
+        <View style={listStyles.joinContainer}>
+          <View>
+            <TextInput
+              style={listStyles.joinInput}
+              value={inviteCode}
+              onChangeText={setInviteCode} // 更新状态
+            />
+          </View>  
+          <Button title="join a list" onPress={handleSubmit}/>
+      </View>
+
         {/* lists */}
         <FlatList 
           data={todoLists}

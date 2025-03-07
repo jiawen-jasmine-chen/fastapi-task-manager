@@ -67,3 +67,46 @@ export const fetchTasks = async (todolistId: number) => {
       throw new Error(error.response?.data?.detail || 'Failed to create ToDoList');
     }
   };
+
+  // 输入邀请码进入share list
+  export const joinTodoList = async (
+    userId: number | null,
+    inviteCode: string
+  ): Promise<{ message: string }> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/todolists/join`,
+        {
+          user_id: userId,    // 注意参数名需要匹配后端 snake_case 格式
+          invite_code: inviteCode
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        // 处理后端返回的明确错误
+        const status = error.response.status;
+        const message = error.response.data.detail || error.response.data.message;
+  
+        if (status === 404) {
+          throw new Error("invalid invite code");
+        } else if (status === 500) {
+          throw new Error("service error, try again");
+        }
+        throw new Error(message || "failed to join a list");
+      } else if (error.request) {
+        // 请求已发出但没有收到响应
+        throw new Error("unable to connect with the server");
+      } else {
+        // 其他错误
+        throw new Error("other errors");
+      }
+    }
+  };
+  
