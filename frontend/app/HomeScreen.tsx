@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
 import { fetchTodoLists } from '../api/todoService';
-import { Task, fetchTasks, addTaskToServer } from '../api/taskService';
+import { Task, fetchTasks, addTaskToServer, updateTaskOnServer } from '../api/taskService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import homeStyles from '../styles/homeStyles';
 import { useRouter } from 'expo-router';
 import { RootStackParamList } from '../types/types';
+import { useFocusEffect } from '@react-navigation/native'; // ✅ 导入 useFocusEffect
 
 
 
@@ -57,21 +58,24 @@ export default function HomeScreen() {
     }
   }, [userId]);
 
-  // **获取选定 ToDoList 的任务**
-  useEffect(() => {
-    if (selectedTodoList) {
-      const loadTasks = async () => {
-        try {
-          const fetchedTasks = await fetchTasks(selectedTodoList);
-          console.log('Fetched tasks from backend:', fetchedTasks);
-          setTasks(fetchedTasks);
-        } catch (error) {
-          console.error('Error fetching tasks:', error);
+    // ✅ **监听页面焦点变化，确保返回主页时刷新任务**
+    // **获取选定 ToDoList 的任务**
+    useFocusEffect(
+      useCallback(() => {
+        if (selectedTodoList) {
+          const loadTasks = async () => {
+            try {
+              const fetchedTasks = await fetchTasks(selectedTodoList);
+              console.log('🔄 Tasks updated after returning:', fetchedTasks);
+              setTasks(fetchedTasks);
+            } catch (error) {
+              console.error('Error fetching tasks:', error);
+            }
+          };
+          loadTasks();
         }
-      };
-      loadTasks();
-    }
-  }, [selectedTodoList]);
+      }, [selectedTodoList])
+    );
 
   // **键盘弹起时调整输入框位置**
   useEffect(() => {
