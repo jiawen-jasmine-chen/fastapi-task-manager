@@ -196,7 +196,10 @@ export default function HomeScreen() {
           {/* 标题 */}
           <View style={homeStyles.header}>
             <View style={homeStyles.titleContainer}>
-              <Text style={homeStyles.headerText}>Welcome, {username}!</Text>
+              <Text style={homeStyles.headerText2}>Welcome, {username}!</Text>
+            </View>
+            <View style={homeStyles.titleContainer}>
+              <Text style={homeStyles.headerText}>Today's ToDo!</Text>
             </View>
           </View>
 

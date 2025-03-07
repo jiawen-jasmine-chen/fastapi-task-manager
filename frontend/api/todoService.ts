@@ -3,20 +3,41 @@ import axios from 'axios';
 const API_BASE_URL = 'http://backend.155.4.244.194.nip.io';
 
 // **获取用户的 ToDoList**
-export const fetchTodoLists = async (userId: number) => {
+// export const fetchTodoLists = async (userId: number) => {
+//   try {
+//     const response = await axios.get(`${API_BASE_URL}/todolists/${userId}`);
+//     return response.data.todolists || [];
+//   } catch (error:any) {
+//     if(error.response.status === 404) {
+//       return [];
+//     }
+//     else{
+//       console.error('Error fetching ToDo lists:', error);
+//       return [];
+//     }
+//   }
+// };
+export const fetchTodoLists = async (userId: number): Promise<{ id: number; name: string; share: boolean }[]> => {
   try {
     const response = await axios.get(`${API_BASE_URL}/todolists/${userId}`);
-    return response.data.todolists || [];
-  } catch (error:any) {
-    if(error.response.status === 404) {
+
+    console.log("Fetched ToDo Lists:", response.data.todolists);
+
+    return (response.data.todolists || []).map((list: { id: number; name: string; shared: boolean }) => ({
+      id: list.id,
+      name: list.name,
+      share: list.shared ?? false, // 确保 share 是 boolean
+    }));
+  } catch (error: any) {
+    if (error.response?.status === 404) {
       return [];
-    }
-    else{
+    } else {
       console.error('Error fetching ToDo lists:', error);
       return [];
     }
   }
 };
+
 
 // **获取 ToDoList 里的任务**
 export const fetchTasks = async (todolistId: number) => {

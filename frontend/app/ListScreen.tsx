@@ -12,15 +12,17 @@ import { Checkbox } from 'expo-checkbox';
 import { fetchTodoLists, fetchTasks } from '../api/todoService';
 import { Task } from '../api/taskService';
 import homeStyles from '../styles/homeStyles';
+import listStyles from '../styles/listStyles';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { RootStackParamList } from '../types/types';
+import { Ionicons } from '@expo/vector-icons'; // 确保已安装 react-native-vector-icons
 
 export default function ListScreen() {
   const router = useRouter();
   const userId = useSelector((state: RootState) => state.user.userId);
   const username = useSelector((state: RootState) => state.user.username);
-  const [todoLists, setTodoLists] = useState<{ id: number; name: string }[]>([]);
+  const [todoLists, setTodoLists] = useState<{ id: number; name: string; share: boolean }[]>([]);
   const [selectedTodoList, setSelectedTodoList] = useState<number | null>(null);
   const [tasksByList, setTasksByList] = useState<{ [key: number]: Task[] }>({});
 
@@ -51,7 +53,6 @@ useEffect(() => {
     loadTodoLists();
   }
 }, [userId]);
-
 
   // 获取单个列表的任务
   const loadTasksForList = async (listId: number) => {
@@ -97,12 +98,17 @@ useEffect(() => {
     );
   };
 
-  // 渲染单个任务列表（包含标题和任务）
-  const renderTodoList = ({ item: list }: { item: { id: number; name: string } }) => (
-    <View style={styles.listContainer}>
+  const renderTodoList = ({ item: list }: { item: { id: number; name: string; share: boolean } }) => {
+    const isShared = list.share;
+    
+    return (
+      <View style={[listStyles.listContainer, isShared && listStyles.sharedList]}>
       {/* 列表标题 */}
-      <Text style={styles.listTitle}>{list.name}</Text>
-      
+      <Text style={listStyles.listTitle}>
+        {list.name}
+      </Text>
+      {isShared && <Ionicons name="share-social" size={20} color="white" style={listStyles.shareIcon} />}
+
       {/* 任务列表 */}
       <FlatList
         data={tasksByList[list.id] || []}
@@ -110,19 +116,20 @@ useEffect(() => {
         renderItem={renderTask}
         contentContainerStyle={homeStyles.taskList}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No ToDos</Text>
+          <Text style={listStyles.emptyText}>No ToDos</Text>
         }
-      />
-    </View>
-  );
-
+        />
+      </View>
+    );
+  };
+  
   return (
     <SafeAreaView style={homeStyles.container}>
       <FlatList
         data={todoLists}
         keyExtractor={(list) => list.id.toString()}
         renderItem={renderTodoList}
-        contentContainerStyle={styles.mainContainer}
+        contentContainerStyle={listStyles.mainContainer}
         ListEmptyComponent={
           <View style={homeStyles.emptyState}>
             <Text style={homeStyles.emptyStateText}>No Lists</Text>
@@ -133,24 +140,21 @@ useEffect(() => {
   );
 }
 
-
-const styles = StyleSheet.create({
-  mainContainer: {
-    paddingHorizontal: 20,
-  },
-  listContainer: {
-    marginBottom: 30,
-  },
-  listTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 10,
-    paddingLeft: 10,
-  },
-  emptyText: {
-    color: '#999',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-});
+  // // 渲染单个任务列表（包含标题和任务）
+  // const renderTodoList = ({ item: list }: { item: { id: number; name: string } }) => (
+  //   <View style={listStyles.listContainer}>
+  //     {/* 列表标题 */}
+  //     <Text style={listStyles.listTitle}>{list.name}</Text>
+      
+  //     {/* 任务列表 */}
+  //     <FlatList
+  //       data={tasksByList[list.id] || []}
+  //       keyExtractor={(task) => task.id.toString()}
+  //       renderItem={renderTask}
+  //       contentContainerStyle={homeStyles.taskList}
+  //       ListEmptyComponent={
+  //         <Text style={listStyles.emptyText}>No ToDos</Text>
+  //       }
+  //     />
+  //   </View>
+  // );

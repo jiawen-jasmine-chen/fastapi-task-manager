@@ -25,6 +25,11 @@ const homeStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000000',
   },
+  headerText2: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
   taskList: {
     paddingHorizontal: 20,
     paddingBottom: 150,
