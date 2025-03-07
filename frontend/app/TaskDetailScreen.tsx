@@ -16,6 +16,7 @@ const TaskDetailScreen = () => {
     due_date?: string;
     created_at?: string;
     completed: boolean;
+    todolist_id: number;
   } | null>(null);
   
   const [users, setUsers] = useState<Record<number, string>>({});
@@ -45,6 +46,7 @@ const TaskDetailScreen = () => {
     );
   }
 
+  const todolistId = task.todolist_id ? `List ${task.todolist_id}` : 'None';
   const assigneeName = task.assignee ? users[task.assignee] || `User ${task.assignee}` : 'Unassigned';
   const ownerName = task.owner_id ? users[task.owner_id] || `User ${task.owner_id}` : 'Unknown';
 
@@ -112,6 +114,12 @@ const TaskDetailScreen = () => {
       )}
 
       <View style={taskDetailStyles.card}>
+        {/* ✅ ToDoListID */}
+          <View style={taskDetailStyles.row}>
+          <Text style={taskDetailStyles.label}>List ID:</Text>
+          <Text style={taskDetailStyles.value}>{todolistId}</Text>
+        </View>
+
         {/* ✅ Assignee */}
         <View style={taskDetailStyles.row}>
           <Text style={taskDetailStyles.label}>Assignee:</Text>

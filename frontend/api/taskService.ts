@@ -35,6 +35,7 @@ export const fetchTasks = async (todolistId: number): Promise<Task[]> => {
     return fetchedTasks.map((task) => ({
       ...task,
       completed: task.progress === 'Completed', // ✅ 修正 completed 逻辑
+      todolist_id: task.todolist_id,
     }));
   } catch (error) {
     console.error('Error fetching tasks:', error);
