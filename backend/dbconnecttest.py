@@ -287,3 +287,40 @@ def update_task(task_id: int, task_update: TaskUpdate):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Task WHERE TaskID = %s;", (task_id,))
+            existing_task = cursor.fetchone()
+            if not existing_task:
+                raise HTTPException(status_code=404, detail="Task not found")
+
+            cursor.execute("DELETE FROM Task WHERE TaskID = %s;", (task_id,))
+            connection.commit()
+        connection.close()
+        return {"message": "Task deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/todolists/{todolist_id}")
+def delete_todolist(todolist_id: int):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM ToDoList WHERE ToDoListID = %s;", (todolist_id,))
+            existing_todolist = cursor.fetchone()
+            if not existing_todolist:
+                raise HTTPException(status_code=404, detail="Todo list not found")
+
+            cursor.execute("DELETE FROM Task WHERE ToDoListID = %s;", (todolist_id,))
+            cursor.execute("DELETE FROM ToDoListShare WHERE ToDoListID = %s;", (todolist_id,))
+            cursor.execute("DELETE FROM ToDoList WHERE ToDoListID = %s;", (todolist_id,))
+            connection.commit()
+        connection.close()
+        return {"message": "Todo list deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
