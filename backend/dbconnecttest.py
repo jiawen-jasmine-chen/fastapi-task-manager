@@ -191,6 +191,43 @@ def join_todolist(user_id: int, invite_code: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@app.get("/todolists/{todolist_id}/users")
+def get_users_with_access(todolist_id: int):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            
+            cursor.execute("""
+                SELECT User.UserID, User.Username 
+                FROM User 
+                JOIN ToDoList ON User.UserID = ToDoList.UserID 
+                WHERE ToDoList.ToDoListID = %s;
+            """, (todolist_id,))
+            owner = cursor.fetchone()
+            
+            cursor.execute("""
+                SELECT User.UserID, User.Username 
+                FROM User 
+                JOIN ToDoListShare ON User.UserID = ToDoListShare.UserID 
+                WHERE ToDoListShare.ToDoListID = %s;
+            """, (todolist_id,))
+            shared_users = cursor.fetchall()
+            
+        connection.close()
+        
+        users_with_access = []
+        
+        if owner:
+            users_with_access.append({"id": owner[0], "username": owner[1], "role": "owner"})
+        
+        users_with_access.extend([{"id": u[0], "username": u[1], "role": "member"} 
+                                  for u in shared_users])
+        
+        return {"users": users_with_access}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
     
 @app.get("/tasks/{todolist_id}")
 def get_tasks(todolist_id: int):
@@ -324,3 +361,4 @@ def delete_todolist(todolist_id: int):
         return {"message": "Todo list deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
