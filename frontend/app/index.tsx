@@ -6,12 +6,12 @@ export default function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      // ✅ 3秒后自动跳转到注册页
-      router.replace("/RegisterScreen");
-    }, 3000);
+    // const timeout = setTimeout(() => {
+    //   // ✅ 3秒后自动跳转到注册页
+    //   router.replace("/RegisterScreen");
+    // }, 3000);
 
-    return () => clearTimeout(timeout); // ✅ 组件卸载时清除定时器，防止内存泄漏
+    // return () => clearTimeout(timeout); // ✅ 组件卸载时清除定时器，防止内存泄漏
   }, []);
 
   return (
