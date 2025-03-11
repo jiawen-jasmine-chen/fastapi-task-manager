@@ -11,7 +11,7 @@ export default function SplashScreen() {
     //   router.replace("/RegisterScreen");
     // }, 3000);
 
-    return () => clearTimeout(timeout); // ✅ 组件卸载时清除定时器，防止内存泄漏
+    // return () => clearTimeout(timeout); // ✅ 组件卸载时清除定时器，防止内存泄漏
   }, []);
 
   return (
