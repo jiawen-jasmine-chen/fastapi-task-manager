@@ -132,6 +132,43 @@ const homeStyles = StyleSheet.create({
   //calendar
   selectedDateText: 
   { fontSize: 18, fontWeight: "bold", marginVertical: 10 },
+  dropdownButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  dropdownButtonText: {
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  modalCancel: {
+    marginTop: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
 });
 
 export default homeStyles;

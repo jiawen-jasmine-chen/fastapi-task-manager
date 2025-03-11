@@ -9,6 +9,8 @@ import {
   Animated,
   SafeAreaView,
   TouchableWithoutFeedback,
+  Modal, 
+  Pressable,
 } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
 import { fetchTodoLists } from '../api/todoService';
@@ -33,8 +35,9 @@ export default function HomeScreen() {
   const [newTask, setNewTask] = useState('');
   //const [bottomOffset] = useState(new Animated.Value(70));
   const bottomOffset = useRef(new Animated.Value(70)).current;
-
   const flatListRef = useRef<FlatList>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   
 
   // **获取用户的 ToDoLists**
@@ -139,10 +142,6 @@ export default function HomeScreen() {
         // ✅ 方式 1：强制刷新任务列表（从后端重新获取）
         const updatedTasks = await fetchTasks(selectedTodoList);
         setTasks(updatedTasks); // 这样确保 UI 立即更新
-  
-        // ✅ 方式 2：稍微延迟 `setTasks` 让 React 先完成 UI 渲染
-        // setTimeout(() => setTasks([...tasks, addedTask]), 100);
-  
         setNewTask('');
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -203,15 +202,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* <View style={homeStyles.listcontainer}>
-            <TouchableOpacity
-              onPress={() => router.push('/CalendarScreen')}
-              style={homeStyles.listButton}
-            >
-              <Text style={homeStyles.addButtonText}>View Tasklists</Text>
-            </TouchableOpacity>
-            </View> */}
-
           {/* 任务列表 */}
           {tasks.length === 0 ? (
             <View style={homeStyles.emptyState}>
@@ -231,22 +221,78 @@ export default function HomeScreen() {
             />
           )}
 
-          {/* 输入框 */}
-          <Animated.View style={[homeStyles.inputWrapper, { bottom: bottomOffset }]}>
-            <View style={homeStyles.whiteBackgroundBar} />
-            <View style={homeStyles.inputContainer}>
-              <TextInput
-                style={homeStyles.input}
-                placeholder="Write a task..."
-                value={newTask}
-                onChangeText={setNewTask}
-                onSubmitEditing={addTask}
-              />
-              <TouchableOpacity style={homeStyles.addButton} onPress={addTask}>
-                <Text style={homeStyles.addButtonText}>+</Text>
-              </TouchableOpacity>
+        {/* ToDo List 选择按钮 */}
+        <TouchableOpacity 
+          style={homeStyles.dropdownButton} 
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={homeStyles.dropdownButtonText}>
+            {selectedTodoList 
+              ? todoLists.find(list => list.id === selectedTodoList)?.name 
+              : "Select ToDo List"}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={homeStyles.inputContainer}>
+        
+        {/* ToDo List 选择按钮 */}
+        {/* <TouchableOpacity 
+          style={homeStyles.dropdownButton} 
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={homeStyles.dropdownButtonText}>
+            {selectedTodoList 
+              ? todoLists.find(list => list.id === selectedTodoList)?.name 
+              : "Select ToDo List"}
+          </Text>
+        </TouchableOpacity> */}
+
+        {/* 输入框 */}
+        <TextInput
+          style={homeStyles.input}
+          placeholder="Write a task..."
+          value={newTask}
+          onChangeText={setNewTask}
+          onSubmitEditing={addTask}
+        />
+
+        {/* 添加任务按钮 */}
+        <TouchableOpacity style={homeStyles.addButton} onPress={addTask}>
+          <Text style={homeStyles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
+
+        {/* Modal for ToDo List Selection */}
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={homeStyles.modalOverlay}>
+              <View style={homeStyles.modalContainer}>
+                <Text style={homeStyles.modalTitle}>Select ToDo List</Text>
+                <FlatList
+                  data={todoLists}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={homeStyles.modalItem}
+                      onPress={() => {
+                        setSelectedTodoList(item.id);
+                        setModalVisible(false);
+                      }}
+                    >
+                      <Text>{item.name}</Text>
+                    </Pressable>
+                  )}
+                />
+                <Pressable onPress={() => setModalVisible(false)} style={homeStyles.modalCancel}>
+                  <Text>Cancel</Text>
+                </Pressable>
+              </View>
             </View>
-          </Animated.View>
+          </Modal>
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
