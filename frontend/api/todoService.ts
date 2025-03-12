@@ -17,16 +17,17 @@ const API_BASE_URL = 'http://backend.155.4.244.194.nip.io';
 //     }
 //   }
 // };
-export const fetchTodoLists = async (userId: number): Promise<{ id: number; name: string; share: boolean }[]> => {
+export const fetchTodoLists = async (userId: number): Promise<{ id: number; name: string; share: boolean; owner_id?: number }[]> => {
   try {
     const response = await axios.get(`${API_BASE_URL}/todolists/${userId}`);
 
     console.log("Fetched ToDo Lists:", response.data.todolists);
 
-    return (response.data.todolists || []).map((list: { id: number; name: string; shared: boolean }) => ({
+    return (response.data.todolists || []).map((list: { id: number; name: string; shared: boolean; owner_id: number }) => ({
       id: list.id,
       name: list.name,
-      share: list.shared ?? false, // 确保 share 是 boolean
+      share: list.shared ?? false,
+      owner_id: list.owner_id  // Add this line to include owner_id
     }));
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -147,9 +148,9 @@ export const deleteTodoList = async (todolistId: number): Promise<boolean> => {
 };
 
 // As named, leaves shard list but only for members
-export const leaveSharedList = async (todolistId, userId) => {
+export const leaveSharedList = async (todolistId: number, userId: number) => {
   try {
-    const response = await fetch(`http://your-api-url/todolists/${todolistId}/leave`, {
+    const response = await fetch(`${API_BASE_URL}/todolists/${todolistId}/leave`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -163,7 +164,6 @@ export const leaveSharedList = async (todolistId, userId) => {
       return false;
     }
     
-    const data = await response.json();
     return true;
   } catch (error) {
     console.error('Leave shared list error:', error);
