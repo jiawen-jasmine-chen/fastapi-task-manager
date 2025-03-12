@@ -35,6 +35,9 @@ class TaskUpdate(BaseModel):
     assignee: int | None = None
     due_date: date | None = None
     progress: str | None = None 
+
+class LeaveListRequest(BaseModel):
+    user_id: int
     
     
 def get_db_connection():
