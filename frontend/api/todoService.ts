@@ -109,3 +109,19 @@ export const joinTodoList = async (
     }
   }
 };
+
+export const getListUsers = async (todolistId: number) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/todolists/${todolistId}/users`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch list users: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.users || [];
+  } catch (error) {
+    console.error('Error fetching list users:', error);
+    throw error;
+  }
+};
