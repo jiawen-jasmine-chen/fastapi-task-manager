@@ -25,10 +25,6 @@ jobs:
           MESSAGE=$(git show -s --format='%s')
           AUTHOR=$(git show -s --format='%an')
 
-          if [ "$AUTHOR" = "TommyKomo99" ]; then
-            AUTHOR="Hussein"
-          fi
-
           echo "MESSAGE=$MESSAGE" >> "$GITHUB_OUTPUT"
           echo "AUTHOR=$AUTHOR" >> "$GITHUB_OUTPUT"
  
