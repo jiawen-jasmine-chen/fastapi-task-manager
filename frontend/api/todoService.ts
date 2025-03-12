@@ -125,3 +125,48 @@ export const getListUsers = async (todolistId: number) => {
     throw error;
   }
 };
+
+export const deleteTodoList = async (todolistId: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/todolists/${todolistId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete todolist: ${response.status}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting todolist:', error);
+    return false;
+  }
+};
+
+// As named, leaves shard list but only for members
+export const leaveSharedList = async (todolistId, userId) => {
+  try {
+    const response = await fetch(`http://your-api-url/todolists/${todolistId}/leave`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Server responded with error:', errorData);
+      return false;
+    }
+    
+    const data = await response.json();
+    return true;
+  } catch (error) {
+    console.error('Leave shared list error:', error);
+    throw error;
+  }
+};

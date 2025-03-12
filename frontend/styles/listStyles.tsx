@@ -25,11 +25,19 @@ const listStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   listTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     flex: 1,
+  },
+  iconButton: {
+    padding: 5,
+    marginLeft: 2,
   },
   shareIcon: {
     marginRight: 8,
@@ -137,6 +145,37 @@ const listStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     textAlign: 'center',
+  },
+  
+  // Action Menu Styles
+  actionModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionButtons: {
+    marginTop: 15,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  actionText: {
+    fontSize: 16,
+    marginLeft: 15,
+    color: '#333',
+  },
+  deleteText: {
+    color: '#FF3B30',
   },
 });
 
