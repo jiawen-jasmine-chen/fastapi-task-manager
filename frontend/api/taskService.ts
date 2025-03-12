@@ -73,3 +73,25 @@ export const updateTaskOnServer = async (taskId: number, updates: Partial<Task>)
     return null;
   }
 };
+
+export const deleteTaskFromServer = async (taskId: number): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Delete task failed:', errorData);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    return false;
+  }
+};
