@@ -362,3 +362,36 @@ def delete_todolist(todolist_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+class LeaveListRequest(BaseModel):
+    user_id: int
+
+@app.post("/todolists/{todolist_id}/leave")
+def leave_todolist(todolist_id: int, request: LeaveListRequest):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # Check if the user is a member of this shared list
+            cursor.execute("""
+                SELECT * FROM ToDoListShare 
+                WHERE ToDoListID = %s AND UserID = %s
+            """, (todolist_id, request.user_id))
+            membership = cursor.fetchone()
+            
+            if not membership:
+                raise HTTPException(status_code=404, detail="User is not a member of this list or list does not exist")
+            
+            # Remove user from the shared list
+            cursor.execute("""
+                DELETE FROM ToDoListShare 
+                WHERE ToDoListID = %s AND UserID = %s
+            """, (todolist_id, request.user_id))
+            
+            connection.commit()
+            
+        connection.close()
+        return {"message": "Successfully left the shared list"}
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Error leaving list: {str(e)}")
