@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchUsers } from '../api/authService';
-import { updateTaskOnServer } from '../api/taskService';
+import { updateTaskOnServer, deleteTaskFromServer } from '../api/taskService';
 import taskDetailStyles from '../styles/TaskDetailStyles';
 
 const TaskDetailScreen = () => {
@@ -89,6 +89,38 @@ const TaskDetailScreen = () => {
     }
   };
 
+  // ✅ 删除任务
+  const handleDeleteTask = () => {
+    Alert.alert(
+      "Delete Task",
+      "Are you sure you want to delete this task?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const success = await deleteTaskFromServer(task.id);
+              if (success) {
+                alert("Task deleted successfully!");
+                router.back();
+              } else {
+                alert("Failed to delete task.");
+              }
+            } catch (error) {
+              console.error("Error deleting task:", error);
+              alert("An error occurred while deleting the task.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleBack = async () => {
     if (isEditing && editedDescription !== task.description) {
       await handleSave();
@@ -155,9 +187,16 @@ const TaskDetailScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity style={taskDetailStyles.editButton} onPress={handleBack}>
-        <Text style={taskDetailStyles.editButtonText}>Back</Text>
-      </TouchableOpacity>
+      {/* Buttons container with Back and Delete buttons */}
+      <View style={taskDetailStyles.buttonContainer}>
+        <TouchableOpacity style={taskDetailStyles.editButton} onPress={handleBack}>
+          <Text style={taskDetailStyles.editButtonText}>Back</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={taskDetailStyles.deleteButton} onPress={handleDeleteTask}>
+          <Text style={taskDetailStyles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

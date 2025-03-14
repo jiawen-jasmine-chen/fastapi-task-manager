@@ -1,67 +1,182 @@
 import { StyleSheet } from 'react-native';
 
 const listStyles = StyleSheet.create({
-    // listContainer: {
-    //   padding: 15,
-    //   margin: 10,
-    //   borderRadius: 8,
-    //   backgroundColor: '#f8f9fa', // 默认背景色
-    //   flexDirection: 'row',
-    //   alignItems: 'center',
-    // },
-    sharedList: {
-      backgroundColor: '#E6E6FA', // 共享列表的特殊背景色
-    },
-    shareIcon: {
-      marginLeft: 5,
-    },
-    mainContainer: {
-      paddingHorizontal: 20,
-    },
-    listTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#000',
-      marginBottom: 10,
-      paddingLeft: 10,
-    },
-    emptyText: {
-      color: '#999',
-      textAlign: 'center',
-      paddingVertical: 20,
-    },
-    // listHeader: {
-    //   flexDirection: "row",
-    //   justifyContent: "space-between",
-    //   alignItems: "center",
-    // },
-    listContainer: {
-      marginVertical: 10,
-      padding: 10,
-      backgroundColor: "#f8f9fa",
-      borderRadius: 10,
-    },
-    listHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between", // 标题和按钮分开
-      alignItems: "center",
-      paddingBottom: 5, // 确保列表与标题有间距
-    },
-    joinContainer: {
-      padding: 20,
-    },
-    joinLabel: {
-      fontSize: 16,
-      marginBottom: 10,
-    },
-    joinInput: {
-      height: 40,
-      borderColor: '#ccc',
-      borderWidth: 1,
-      borderRadius: 5,
-      paddingHorizontal: 10,
-      marginBottom: 20,
-    },
-  });
+  mainContainer: {
+    padding: 16,
+  },
+  listContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    marginBottom: 15,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  sharedList: {
+    borderLeftWidth: 5,
+    borderLeftColor: '#6c63ff',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+  },
+  iconButton: {
+    padding: 5,
+    marginLeft: 2,
+  },
+  shareIcon: {
+    marginRight: 8,
+  },
+  shareIconContainer: {
+    padding: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    marginVertical: 10,
+    fontStyle: 'italic',
+  },
+  joinContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: 'white',
+    marginBottom: 10,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  joinInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    marginRight: 10,
+  },
+  
+  // Shared Users Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+    color: '#333',
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  userIcon: {
+    marginRight: 10,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  userRole: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 2,
+  },
+  ownerRole: {
+    color: '#6c63ff',
+    fontWeight: '500',
+  },
+  closeButton: {
+    backgroundColor: '#6c63ff',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignSelf: 'center',
+    marginTop: 20,
+    shadowColor: '#6c63ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  
+  // Action Menu Styles
+  actionModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionButtons: {
+    marginTop: 15,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  actionText: {
+    fontSize: 16,
+    marginLeft: 15,
+    color: '#333',
+  },
+  deleteText: {
+    color: '#FF3B30',
+  },
+});
 
-  export default listStyles;
+export default listStyles;

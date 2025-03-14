@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+
 // ✅ **样式**
 const taskDetailStyles  = StyleSheet.create({
     container: {
@@ -90,7 +91,33 @@ const taskDetailStyles  = StyleSheet.create({
       fontWeight: 'bold',
       textAlign: 'center',
     },
+    // New styles for delete button
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center', // Centers the buttons
+      alignItems: 'center',
+      gap: 90, // Adds slight spacing between buttons
+      
+    },
+    deleteButton: {
+      backgroundColor: '#FF3B30', // Red color for delete button
+      borderRadius: 25,
+      paddingVertical: 14,
+      paddingHorizontal: 30,
+      alignSelf: 'center',
+      marginTop: 30,
+      shadowColor: '#FF3B30',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    deleteButtonText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
   });
   
   export default taskDetailStyles;
-  
