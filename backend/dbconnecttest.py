@@ -35,6 +35,9 @@ class TaskUpdate(BaseModel):
     assignee: int | None = None
     due_date: date | None = None
     progress: str | None = None 
+
+class LeaveListRequest(BaseModel):
+    user_id: int
     
 class LeaveListRequest(BaseModel):
     user_id: int
@@ -366,6 +369,12 @@ def delete_todolist(todolist_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+
+class LeaveListRequest(BaseModel):
+    user_id: int
+
+
 @app.post("/todolists/{todolist_id}/leave")
 def leave_todolist(todolist_id: int, request: LeaveListRequest):
     try:
@@ -395,4 +404,4 @@ def leave_todolist(todolist_id: int, request: LeaveListRequest):
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"Error leaving list: {str(e)}")
-    
+
