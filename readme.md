@@ -24,7 +24,7 @@ All services were deployed using Docker and K3s, with Traefik as the ingress con
 - Cloud-based backend deployment using K3s
 
 ## 🧠 Project Background  
-This project was developed as part of the Platform-Spanning Systems course at Uppsala University. Our team worked in agile sprints, writing sprint reports and using Jira to track progress and assign tasks.
+This project was developed as part of the Platform-Spanning Systems course. Our team worked in agile sprints, writing sprint reports and using Jira to track progress and assign tasks.
 
 ## 👩‍💻 My Contributions  
 - Designed and implemented the homepage task list UI  
